@@ -6,36 +6,19 @@ require('dotenv').config();
  * Connects directly to Turso Cloud (process.env.TURSO_DATABASE_URL)
  */
 
-function getDatabaseConfig() {
-  const tursoUrl = process.env.TURSO_DATABASE_URL ? process.env.TURSO_DATABASE_URL.trim() : '';
-  const tursoToken = process.env.TURSO_AUTH_TOKEN ? process.env.TURSO_AUTH_TOKEN.trim() : undefined;
+const tursoUrl = (process.env.TURSO_DATABASE_URL || '').trim();
+const tursoToken = (process.env.TURSO_AUTH_TOKEN || '').trim() || undefined;
 
-  if (tursoUrl) {
-    return {
-      url: tursoUrl,
-      authToken: tursoToken
-    };
-  }
-
-  // If in Vercel environment without TURSO_DATABASE_URL set yet, fallback to :memory: to prevent 500 lambda crashes
-  if (process.env.VERCEL) {
-    console.warn('⚠️ [Turso] TURSO_DATABASE_URL is missing in Vercel environment variables. Using in-memory fallback to prevent file system errors.');
-    return { url: ':memory:' };
-  }
-
-  // Local development fallback
-  return { url: 'file:craftcon_gaming.db' };
+if (!tursoUrl && (process.env.VERCEL || process.env.NODE_ENV === 'production')) {
+  console.warn('⚠️ [Turso] TURSO_DATABASE_URL environment variable is missing in production deployment!');
 }
 
-const dbConfig = getDatabaseConfig();
+const db = createClient({
+  url: tursoUrl || 'file:craftcon_gaming.db',
+  ...(tursoToken ? { authToken: tursoToken } : {})
+});
 
-let db;
-try {
-  db = createClient(dbConfig);
-  console.log(`⚡ Initialized Turso/libSQL client (${dbConfig.url.startsWith('libsql:') || dbConfig.url.startsWith('https:') ? 'Turso Cloud' : dbConfig.url})`);
-} catch (err) {
-  console.error('❌ Failed to initialize libSQL client:', err.message);
-}
+console.log(`⚡ Initialized Turso/libSQL client (${tursoUrl ? 'Turso Cloud: ' + tursoUrl : 'Local File Mode'})`);
 
 let isInitialized = false;
 let initPromise = null;
