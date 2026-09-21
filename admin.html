@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRAFTCON '26 GAMING ARENA — Admin Dashboard</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Silkscreen:wght@400;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="gaming.css">
+
+  <style>
+    .admin-container {
+      max-width: 1350px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+    
+    .admin-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      margin-bottom: 36px;
+    }
+
+    .admin-stat-card {
+      padding: 24px;
+      background: var(--bg-surface-elevated);
+      border: 1.5px solid var(--gaming-border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stat-card-title {
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+    }
+
+    .stat-card-val {
+      font-family: 'Silkscreen', monospace;
+      font-size: 2.2rem;
+      color: var(--color-green-bright);
+      font-weight: 700;
+    }
+
+    .controls-bar {
+      padding: 20px;
+      background: var(--bg-surface);
+      border: 1.5px solid var(--mc-stone-dark);
+      border-radius: 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .search-input-wrap {
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .filters-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .select-custom {
+      padding: 10px 16px;
+      background: var(--bg-deep);
+      border: 1px solid var(--gaming-border);
+      border-radius: 6px;
+      color: var(--text-white);
+      font-family: 'Space Grotesk', sans-serif;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .admin-table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      background: var(--bg-surface-elevated);
+      border: 1.5px solid var(--mc-stone-dark);
+      border-radius: 12px;
+    }
+
+    .admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.92rem;
+    }
+
+    .admin-table th {
+      padding: 16px 20px;
+      background: var(--bg-deep);
+      color: var(--text-dim);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1.5px solid var(--gaming-border);
+    }
+
+    .admin-table td {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      color: var(--text-primary);
+    }
+
+    .admin-table tr:hover td {
+      background: rgba(255,255,255,0.02);
+    }
+
+    .badge-status-paid {
+      display: inline-block;
+      padding: 4px 10px;
+      background: rgba(112, 224, 0, 0.15);
+      color: var(--color-green-bright);
+      border: 1px solid var(--mc-xp-green);
+      border-radius: 20px;
+      font-family: 'Silkscreen', monospace;
+      font-size: 0.7rem;
+    }
+
+    .badge-status-pending {
+      display: inline-block;
+      padding: 4px 10px;
+      background: rgba(245, 166, 35, 0.15);
+      color: var(--color-amber-bright);
+      border: 1px solid var(--color-amber);
+      border-radius: 20px;
+      font-family: 'Silkscreen', monospace;
+      font-size: 0.7rem;
+    }
+
+    .btn-action-sm {
+      padding: 6px 12px;
+      background: rgba(157, 78, 221, 0.2);
+      border: 1px solid var(--color-purple-bright);
+      color: var(--color-purple-bright);
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.8rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-action-sm:hover {
+      background: var(--color-purple);
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body style="background: var(--bg-deep);">
+
+  <!-- Navigation -->
+  <header class="site-header" style="position:relative;">
+    <div class="header-container">
+      <a href="gaming.html" class="brand-wordmark">
+        <span class="nav-dbu-badge">
+          <img src="assets/images/dbu_logo_cropped.png" alt="DBU Logo" class="nav-dbu-img" width="30" height="30">
+        </span>
+        <span class="brand-text">CRAFTCON<span class="brand-year">'26</span></span>
+        <span class="brand-tag" style="background:var(--color-purple);">ADMIN</span>
+      </a>
+
+      <div class="header-actions">
+        <a href="gaming.html" class="btn-gaming-secondary" style="padding:8px 16px; font-size:0.85rem;">
+          <span>🎮 ARENA PORTAL</span>
+        </a>
+        <button id="btn-export-csv" class="pill-cta-btn" style="background:var(--color-amber); border-color:var(--color-amber-bright);">
+          <span>📥 EXPORT CSV</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="admin-container">
+    <div style="margin-bottom:30px;">
+      <h1 class="gaming-main-title" style="font-size:2.4rem; margin-bottom:8px;">REGISTRATIONS CONTROL CENTER</h1>
+      <p style="color:var(--text-muted);">Real-time SQLite database records, payment verifications, and player squad rosters.</p>
+    </div>
+
+    <!-- Summary Metrics -->
+    <div class="admin-stats-grid">
+      <div class="admin-stat-card">
+        <span class="stat-card-title">TOTAL REGISTRATIONS</span>
+        <span class="stat-card-val" id="stat-total-reg" style="color:var(--color-amber-bright);">0</span>
+      </div>
+      <div class="admin-stat-card">
+        <span class="stat-card-title">PAID & CONFIRMED</span>
+        <span class="stat-card-val" id="stat-paid-reg" style="color:var(--color-green-bright);">0</span>
+      </div>
+      <div class="admin-stat-card">
+        <span class="stat-card-title">TOTAL REVENUE COLLECTED</span>
+        <span class="stat-card-val" id="stat-revenue" style="color:var(--gaming-cyan);">₹0</span>
+      </div>
+      <div class="admin-stat-card">
+        <span class="stat-card-title">TOTAL PLAYERS REGISTERED</span>
+        <span class="stat-card-val" id="stat-players" style="color:var(--color-purple-bright);">0</span>
+      </div>
+    </div>
+
+    <!-- Controls & Filters Bar -->
+    <div class="controls-bar">
+      <div class="search-input-wrap">
+        <input type="text" id="admin-search-input" class="input-field-custom" placeholder="🔍 Search Team, Captain, Reg ID, Email...">
+      </div>
+
+      <div class="filters-group">
+        <select id="filter-game" class="select-custom">
+          <option value="">ALL GAMES (6)</option>
+          <option value="BGMI">BGMI</option>
+          <option value="FREE_FIRE">Free Fire MAX</option>
+          <option value="MOBILE_LEGENDS">Mobile Legends</option>
+          <option value="LUDO">Ludo King</option>
+          <option value="CHESS">Speed Chess</option>
+          <option value="CARROM">Carrom Strike</option>
+        </select>
+
+        <select id="filter-category" class="select-custom">
+          <option value="">ALL CATEGORIES</option>
+          <option value="online">Online Gaming (Squads)</option>
+          <option value="offline">Offline Gaming (Solo)</option>
+        </select>
+
+        <select id="filter-payment" class="select-custom">
+          <option value="">ALL PAYMENT STATES</option>
+          <option value="PAID">PAID</option>
+          <option value="PENDING">PENDING</option>
+          <option value="FAILED">FAILED</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>REGISTRATION ID</th>
+            <th>GAME & TYPE</th>
+            <th>TEAM / NAME</th>
+            <th>COLLEGE</th>
+            <th>CAPTAIN & CONTACT</th>
+            <th>PLAYERS</th>
+            <th>AMOUNT</th>
+            <th>PAYMENT STATUS</th>
+            <th>ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody id="admin-table-body">
+          <!-- Rows dynamically injected -->
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- PLAYER SQUAD MODAL -->
+  <div class="gaming-modal-overlay" id="squad-details-modal">
+    <div class="gaming-modal-container" style="max-width:600px;">
+      <div class="wizard-header">
+        <h3 class="wizard-title" id="squad-modal-title">SQUAD ROSTER DETAILS</h3>
+        <button class="modal-close-btn" id="close-squad-modal-btn">&times;</button>
+      </div>
+      <div class="wizard-body">
+        <div id="squad-modal-list">
+          <!-- Players list -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allRegistrations = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchAdminRegistrations();
+
+      document.getElementById('admin-search-input').addEventListener('input', applyFilters);
+      document.getElementById('filter-game').addEventListener('change', applyFilters);
+      document.getElementById('filter-category').addEventListener('change', applyFilters);
+      document.getElementById('filter-payment').addEventListener('change', applyFilters);
+      document.getElementById('btn-export-csv').addEventListener('click', exportToCSV);
+
+      document.getElementById('close-squad-modal-btn').addEventListener('click', () => {
+        document.getElementById('squad-details-modal').classList.remove('active');
+      });
+    });
+
+    async function fetchAdminRegistrations() {
+      try {
+        const res = await fetch('/api/admin/registrations');
+        const data = await res.json();
+        if (data.success) {
+          allRegistrations = data.registrations || [];
+          renderAdminStats(allRegistrations);
+          renderAdminTable(allRegistrations);
+        }
+      } catch (err) {
+        console.error('Failed to load admin registrations:', err);
+      }
+    }
+
+    function renderAdminStats(rows) {
+      let paidCount = 0;
+      let totalRev = 0;
+      let totalPlayers = 0;
+
+      rows.forEach(r => {
+        if (r.payment_status === 'PAID') {
+          paidCount++;
+          totalRev += (r.total_amount || 0);
+        }
+        totalPlayers += (r.player_count || 1);
+      });
+
+      document.getElementById('stat-total-reg').textContent = rows.length;
+      document.getElementById('stat-paid-reg').textContent = paidCount;
+      document.getElementById('stat-revenue').textContent = `₹${totalRev}`;
+      document.getElementById('stat-players').textContent = totalPlayers;
+    }
+
+    function applyFilters() {
+      const search = document.getElementById('admin-search-input').value.toLowerCase().trim();
+      const game = document.getElementById('filter-game').value;
+      const category = document.getElementById('filter-category').value;
+      const payment = document.getElementById('filter-payment').value;
+
+      const filtered = allRegistrations.filter(r => {
+        const matchSearch = !search || 
+          r.registration_id.toLowerCase().includes(search) ||
+          (r.team_name && r.team_name.toLowerCase().includes(search)) ||
+          r.captain_name.toLowerCase().includes(search) ||
+          r.captain_email.toLowerCase().includes(search) ||
+          r.college.toLowerCase().includes(search);
+
+        const matchGame = !game || r.game === game;
+        const matchCategory = !category || r.category === category;
+        const matchPayment = !payment || r.payment_status === payment;
+
+        return matchSearch && matchGame && matchCategory && matchPayment;
+      });
+
+      renderAdminTable(filtered);
+    }
+
+    function renderAdminTable(rows) {
+      const tbody = document.getElementById('admin-table-body');
+      tbody.innerHTML = '';
+
+      if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align:center; padding:30px; color:var(--text-muted);">No registration records found.</td></tr>`;
+        return;
+      }
+
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="font-family:'Silkscreen', monospace; font-size:0.82rem; color:var(--color-amber);">${r.registration_id}</td>
+          <td><strong style="color:var(--text-white);">${r.game}</strong><br><span style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase;">${r.category} • ${r.registration_type}</span></td>
+          <td style="font-weight:600; color:var(--text-white);">${r.team_name || r.captain_name}</td>
+          <td>${r.college}</td>
+          <td>
+            <div style="font-weight:600;">${r.captain_name}</div>
+            <div style="font-size:0.78rem; color:var(--text-dim);">${r.captain_email} | ${r.captain_phone}</div>
+          </td>
+          <td style="font-family:'Silkscreen', monospace; color:var(--color-green-bright);">${r.player_count} Player(s)</td>
+          <td style="font-family:'Silkscreen', monospace; font-weight:700; color:var(--color-green-bright);">₹${r.total_amount}</td>
+          <td>
+            <span class="${r.payment_status === 'PAID' ? 'badge-status-paid' : 'badge-status-pending'}">
+              ${r.payment_status}
+            </span>
+          </td>
+          <td>
+            <button class="btn-action-sm" onclick="viewSquadRoster('${r.registration_id}')">ROSTER</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function viewSquadRoster(regId) {
+      try {
+        const res = await fetch(`/api/registrations/${regId}`);
+        const data = await res.json();
+        if (data.success) {
+          const title = document.getElementById('squad-modal-title');
+          const list = document.getElementById('squad-modal-list');
+          title.textContent = `ROSTER: ${data.registration.registration_id}`;
+
+          list.innerHTML = `
+            <div style="margin-bottom:16px; padding:12px; background:var(--bg-deep); border-radius:6px;">
+              <strong style="color:var(--color-amber);">Team / Participant:</strong> ${data.registration.team_name}<br>
+              <strong style="color:var(--color-amber);">College:</strong> ${data.registration.college}
+            </div>
+          `;
+
+          const players = data.players || [];
+          players.forEach((p, idx) => {
+            const div = document.createElement('div');
+            div.style.cssText = 'padding:12px; background:var(--bg-surface); border-radius:6px; margin-bottom:10px; border:1px solid var(--gaming-border);';
+            div.innerHTML = `
+              <div style="font-weight:700; color:var(--text-white);">${idx === 0 ? '👑 CAPTAIN' : 'PLAYER ' + (idx + 1)}: ${p.name}</div>
+              <div style="font-size:0.85rem; color:var(--text-muted); margin-top:4px;">
+                IGN: <strong style="color:var(--color-green-bright);">${p.in_game_name || 'N/A'}</strong> | UID: ${p.game_uid || 'N/A'}<br>
+                Contact: ${p.email || 'N/A'} | ${p.phone || 'N/A'}
+              </div>
+            `;
+            list.appendChild(div);
+          });
+
+          document.getElementById('squad-details-modal').classList.add('active');
+        }
+      } catch (err) {
+        alert('Failed to fetch player roster.');
+      }
+    }
+
+    function exportToCSV() {
+      if (allRegistrations.length === 0) {
+        alert('No registration data available to export.');
+        return;
+      }
+
+      const headers = ['Registration ID', 'Game', 'Category', 'Type', 'Team Name', 'College', 'Captain Name', 'Captain Email', 'Captain Phone', 'Players Count', 'Total Amount (INR)', 'Payment Status', 'Created At'];
+      const rows = allRegistrations.map(r => [
+        `"${r.registration_id}"`,
+        `"${r.game}"`,
+        `"${r.category}"`,
+        `"${r.registration_type}"`,
+        `"${r.team_name}"`,
+        `"${r.college}"`,
+        `"${r.captain_name}"`,
+        `"${r.captain_email}"`,
+        `"${r.captain_phone}"`,
+        r.player_count,
+        r.total_amount,
+        `"${r.payment_status}"`,
+        `"${r.created_at}"`
+      ]);
+
+      const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', `CRAFTCON_2K26_Registrations_${Date.now()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+</body>
+</html>

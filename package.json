@@ -1,0 +1,28 @@
+{
+  "name": "craftcon-2k26-gaming-arena",
+  "version": "1.0.0",
+  "description": "CRAFTCON 2K26 Gaming Arena - University Gaming Tournament Portal & Registration Engine",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "nodemailer": "^10.0.10",
+    "razorpay": "^2.9.8"
+  },
+  "keywords": [
+    "craftcon",
+    "minecraft",
+    "esports",
+    "gaming",
+    "tournament",
+    "sqlite"
+  ],
+  "author": "Desh Bhagat University - Faculty of Engineering, Technology and Computing",
+  "license": "MIT"
+}
