@@ -1,27 +1,40 @@
 const { createClient } = require('@libsql/client');
-const path = require('path');
 require('dotenv').config();
 
 /**
- * CRAFTCON '26 GAMING ARENA — TURSO / libSQL DATABASE CLIENT
- * Supports Turso Cloud (process.env.TURSO_DATABASE_URL) & Local file mode (file:craftcon_gaming.db)
+ * CRAFTCON '26 GAMING ARENA — CENTRALIZED TURSO / libSQL DATABASE CLIENT
+ * Connects directly to Turso Cloud (process.env.TURSO_DATABASE_URL)
  */
 
-const rawUrl = process.env.TURSO_DATABASE_URL;
-const authToken = process.env.TURSO_AUTH_TOKEN || undefined;
+function getDatabaseConfig() {
+  const tursoUrl = process.env.TURSO_DATABASE_URL ? process.env.TURSO_DATABASE_URL.trim() : '';
+  const tursoToken = process.env.TURSO_AUTH_TOKEN ? process.env.TURSO_AUTH_TOKEN.trim() : undefined;
 
-// Fallback to local libSQL file if no Turso URL provided
-const url = rawUrl && rawUrl.trim() ? rawUrl.trim() : `file:${path.join(__dirname, 'craftcon_gaming.db')}`;
+  if (tursoUrl) {
+    return {
+      url: tursoUrl,
+      authToken: tursoToken
+    };
+  }
+
+  // If in Vercel environment without TURSO_DATABASE_URL set yet, fallback to :memory: to prevent 500 lambda crashes
+  if (process.env.VERCEL) {
+    console.warn('⚠️ [Turso] TURSO_DATABASE_URL is missing in Vercel environment variables. Using in-memory fallback to prevent file system errors.');
+    return { url: ':memory:' };
+  }
+
+  // Local development fallback
+  return { url: 'file:craftcon_gaming.db' };
+}
+
+const dbConfig = getDatabaseConfig();
 
 let db;
 try {
-  db = createClient({
-    url,
-    ...(authToken ? { authToken } : {})
-  });
-  console.log(`⚡ Initialized libSQL client (${url.startsWith('file:') ? 'Local SQLite File' : 'Turso Cloud Database'})`);
+  db = createClient(dbConfig);
+  console.log(`⚡ Initialized Turso/libSQL client (${dbConfig.url.startsWith('libsql:') || dbConfig.url.startsWith('https:') ? 'Turso Cloud' : dbConfig.url})`);
 } catch (err) {
-  console.error('❌ Failed to initialize libSQL database client:', err.message);
+  console.error('❌ Failed to initialize libSQL client:', err.message);
 }
 
 let isInitialized = false;
@@ -83,7 +96,7 @@ async function initDb() {
           email_attempts INTEGER DEFAULT 0,
           last_email_error TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           confirmed_at DATETIME
         );
       `);
@@ -123,13 +136,14 @@ async function initDb() {
           provider TEXT NOT NULL DEFAULT 'RAZORPAY',
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           verified_at DATETIME,
-          updated_at DATETIME
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `);
 
       // Run Column Migrations for Existing Tables
       await ensureColumnExists('registrations', 'amount', 'REAL');
       await ensureColumnExists('registrations', 'currency', "TEXT DEFAULT 'INR'");
+      await ensureColumnExists('registrations', 'updated_at', 'DATETIME');
       await ensureColumnExists('players', 'full_name', 'TEXT');
       await ensureColumnExists('payments', 'signature', 'TEXT');
       await ensureColumnExists('payments', 'updated_at', 'DATETIME');
@@ -148,7 +162,7 @@ async function initDb() {
 }
 
 /**
- * Health Check Helper
+ * Health Check Helper - Performs a live SELECT 1 against Turso
  */
 async function testDbConnection() {
   try {
@@ -156,7 +170,7 @@ async function testDbConnection() {
     const res = await db.execute('SELECT 1 as alive');
     return res && res.rows && res.rows.length > 0;
   } catch (err) {
-    console.error('Database health check failed:', err.message);
+    console.error('Database health check error:', err.message);
     return false;
   }
 }

@@ -143,17 +143,21 @@ function getRazorpayInstance() {
 app.get('/api/health', async (req, res) => {
   try {
     const isDbAlive = await testDbConnection();
-    res.status(isDbAlive ? 200 : 500).json({
-      status: isDbAlive ? "ok" : "error",
-      database: isDbAlive ? "connected" : "disconnected",
-      environment: process.env.NODE_ENV || "development"
-    });
+    if (isDbAlive) {
+      return res.status(200).json({
+        status: "ok",
+        database: "connected"
+      });
+    } else {
+      return res.status(500).json({
+        status: "error",
+        database: "disconnected"
+      });
+    }
   } catch (err) {
-    res.status(500).json({
+    return res.status(500).json({
       status: "error",
-      database: "error",
-      error: err.message,
-      environment: process.env.NODE_ENV || "development"
+      database: "disconnected"
     });
   }
 });
