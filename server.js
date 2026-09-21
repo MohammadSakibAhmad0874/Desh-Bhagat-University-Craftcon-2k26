@@ -606,6 +606,11 @@ app.get('/api/admin/payments', (req, res) => {
   }
 });
 
+// Root route serves Gaming Arena homepage
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'gaming.html'));
+});
+
 // Fallback Route to serve gaming.html as default landing if direct route hit
 app.get('/gaming', (req, res) => {
   res.sendFile(path.join(__dirname, 'gaming.html'));
@@ -624,7 +629,7 @@ app.listen(PORT, () => {
   ------------------------------------------------------------
   🌐 Local URL:   http://localhost:${PORT}
   🕹️ Gaming Arena: http://localhost:${PORT}/gaming.html
-  ⚔️ Hackathon:    http://localhost:${PORT}/index.html
+  ⚔️ Hackathon:    https://tech-hack-three.vercel.app
   📊 Admin Portal: http://localhost:${PORT}/admin.html
   📊 Admin API:    http://localhost:${PORT}/api/admin/registrations
   ============================================================
