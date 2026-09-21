@@ -1,12 +1,29 @@
 const { DatabaseSync } = require('node:sqlite');
 const path = require('path');
+const os = require('os');
+const fs = require('fs');
 
-const DB_PATH = path.join(__dirname, 'craftcon_gaming.db');
+let DB_PATH = path.join(__dirname, 'craftcon_gaming.db');
+
+// Handle Vercel Serverless environment where root filesystem is read-only
+if (process.env.VERCEL) {
+  const tmpPath = path.join(os.tmpdir(), 'craftcon_gaming.db');
+  if (!fs.existsSync(tmpPath)) {
+    if (fs.existsSync(DB_PATH)) {
+      try {
+        fs.copyFileSync(DB_PATH, tmpPath);
+      } catch (e) {
+        console.warn('Could not copy initial DB to /tmp:', e.message);
+      }
+    }
+  }
+  DB_PATH = tmpPath;
+}
 
 let db;
 try {
   db = new DatabaseSync(DB_PATH);
-  console.log('⚡ Connected to SQLite database: craftcon_gaming.db');
+  console.log(`⚡ Connected to SQLite database: ${DB_PATH}`);
 } catch (err) {
   console.error('❌ Failed to open SQLite database:', err.message);
   throw err;
