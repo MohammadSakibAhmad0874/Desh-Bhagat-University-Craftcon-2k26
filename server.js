@@ -4,7 +4,7 @@ const path = require('path');
 const crypto = require('crypto');
 require('dotenv').config();
 
-const db = require('./db');
+const { db, initDb, testDbConnection } = require('./db');
 const emailService = require('./emailService');
 
 // Initialize Razorpay SDK if available
@@ -19,13 +19,27 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
+
 // Middleware to capture raw body for Webhook HMAC verification
 app.use(express.json({
   verify: (req, res, buf) => {
     req.rawBody = buf;
   }
 }));
+
 app.use(express.static(path.join(__dirname)));
+
+// Middleware to ensure DB Schema is initialized on API requests
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    try {
+      await initDb();
+    } catch (e) {
+      console.warn('Database auto-init notice:', e.message);
+    }
+  }
+  next();
+});
 
 /* ==========================================================================
    GAMES CONFIGURATION REGISTRY (AUTHORITATIVE BACKEND RULES)
@@ -125,7 +139,26 @@ function getRazorpayInstance() {
    API ENDPOINTS
    ========================================================================== */
 
-// 1. GET GAMES CATALOGUE
+// 1. HEALTH CHECK ENDPOINT
+app.get('/api/health', async (req, res) => {
+  try {
+    const isDbAlive = await testDbConnection();
+    res.status(isDbAlive ? 200 : 500).json({
+      status: isDbAlive ? "ok" : "error",
+      database: isDbAlive ? "connected" : "disconnected",
+      environment: process.env.NODE_ENV || "development"
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "error",
+      database: "error",
+      error: err.message,
+      environment: process.env.NODE_ENV || "development"
+    });
+  }
+});
+
+// 2. GET GAMES CATALOGUE
 app.get('/api/games', (req, res) => {
   res.json({
     success: true,
@@ -133,8 +166,8 @@ app.get('/api/games', (req, res) => {
   });
 });
 
-// 2. CREATE REGISTRATION (PENDING STATE & BACKEND PRICE COMPUTATION)
-app.post('/api/registrations/create', (req, res) => {
+// 3. CREATE REGISTRATION (PENDING STATE & BACKEND PRICE COMPUTATION)
+app.post('/api/registrations/create', async (req, res) => {
   try {
     const { gameId, teamName, college, captain, players } = req.body;
 
@@ -171,49 +204,50 @@ app.post('/api/registrations/create', (req, res) => {
     const registrationId = `CRAFT26-${gameId}-${randomHex}`;
     const orderId = `order_${Date.now()}_${randomHex}`;
 
-    const insertRegStmt = db.prepare(`
-      INSERT INTO registrations (
+    // Insert Registration Record
+    await db.execute({
+      sql: `INSERT INTO registrations (
         registration_id, category, game, registration_type, team_name,
         college, captain_name, captain_email, captain_phone, player_count,
-        total_amount, fee_per_person, currency, payment_status, registration_status, razorpay_order_id, order_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'INR', 'PENDING', 'PENDING_PAYMENT', ?, ?)
-    `);
+        total_amount, amount, fee_per_person, currency, payment_status, registration_status, razorpay_order_id, order_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'INR', 'PENDING', 'PENDING_PAYMENT', ?, ?)`,
+      args: [
+        registrationId,
+        gameConfig.category,
+        gameConfig.id,
+        gameConfig.type,
+        gameConfig.type === 'squad' ? teamName.trim() : `Solo: ${captain.name.trim()}`,
+        college.trim(),
+        captain.name.trim(),
+        captain.email.trim(),
+        captain.phone.trim(),
+        requiredPlayerCount,
+        totalAmount,
+        totalAmount,
+        feePerPerson,
+        orderId,
+        orderId
+      ]
+    });
 
-    insertRegStmt.run(
-      registrationId,
-      gameConfig.category,
-      gameConfig.id,
-      gameConfig.type,
-      gameConfig.type === 'squad' ? teamName.trim() : `Solo: ${captain.name.trim()}`,
-      college.trim(),
-      captain.name.trim(),
-      captain.email.trim(),
-      captain.phone.trim(),
-      requiredPlayerCount,
-      totalAmount,
-      feePerPerson,
-      orderId,
-      orderId
-    );
-
-    // Insert Player details into relational table
-    const insertPlayerStmt = db.prepare(`
-      INSERT INTO players (registration_id, player_index, name, in_game_name, game_uid, email, phone, role)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    providedPlayers.forEach((player, idx) => {
-      insertPlayerStmt.run(
+    // Insert Players Roster
+    const playerStatements = providedPlayers.map((player, idx) => ({
+      sql: `INSERT INTO players (registration_id, player_index, name, full_name, in_game_name, game_uid, email, phone, role)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
         registrationId,
         idx + 1,
+        player.name ? player.name.trim() : captain.name.trim(),
         player.name ? player.name.trim() : captain.name.trim(),
         player.inGameName ? player.inGameName.trim() : 'N/A',
         player.gameUid ? player.gameUid.trim() : 'N/A',
         player.email ? player.email.trim() : captain.email.trim(),
         player.phone ? player.phone.trim() : captain.phone.trim(),
         idx === 0 ? 'CAPTAIN' : `PLAYER_${idx + 1}`
-      );
-    });
+      ]
+    }));
+
+    await db.batch(playerStatements);
 
     console.log(`📝 Registration initialized [${registrationId}] for ${gameConfig.name}. Amount: ₹${totalAmount}`);
 
@@ -227,6 +261,7 @@ app.post('/api/registrations/create', (req, res) => {
       playerCount: requiredPlayerCount,
       feePerPerson,
       totalAmount,
+      amount: totalAmount,
       currency: 'INR'
     });
 
@@ -236,7 +271,7 @@ app.post('/api/registrations/create', (req, res) => {
   }
 });
 
-// 3. CREATE RAZORPAY PAYMENT ORDER (Supports both /api/payments/create-order and /api/payment/create-order)
+// 4. CREATE RAZORPAY PAYMENT ORDER
 app.post(['/api/payments/create-order', '/api/payment/create-order'], async (req, res) => {
   try {
     const { registrationId } = req.body;
@@ -245,22 +280,24 @@ app.post(['/api/payments/create-order', '/api/payment/create-order'], async (req
       return res.status(400).json({ success: false, error: 'registrationId is required.' });
     }
 
-    const selectStmt = db.prepare('SELECT * FROM registrations WHERE registration_id = ?');
-    const reg = selectStmt.get(registrationId);
+    const regRes = await db.execute({
+      sql: 'SELECT * FROM registrations WHERE registration_id = ?',
+      args: [registrationId]
+    });
+    const reg = regRes.rows && regRes.rows.length > 0 ? regRes.rows[0] : null;
 
     if (!reg) {
       return res.status(404).json({ success: false, error: 'Registration record not found.' });
     }
 
-    // Always recalculate amount on backend (in paise: ₹1 = 100 paise)
-    const amountInPaise = Math.round(reg.total_amount * 100);
+    const amount = reg.total_amount || reg.amount;
+    const amountInPaise = Math.round(amount * 100);
     const keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_craftcon2026';
 
     let rzpOrderId = reg.razorpay_order_id || reg.order_id;
     const razorpayInstance = getRazorpayInstance();
 
     if (razorpayInstance) {
-      // Call official Razorpay SDK
       const rzpOrder = await razorpayInstance.orders.create({
         amount: amountInPaise,
         currency: 'INR',
@@ -273,26 +310,23 @@ app.post(['/api/payments/create-order', '/api/payment/create-order'], async (req
       });
       rzpOrderId = rzpOrder.id;
     } else {
-      // Development Test Mode structured order ID
       if (!rzpOrderId || !rzpOrderId.startsWith('order_')) {
         rzpOrderId = `order_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
       }
     }
 
-    // Update order ID in SQLite
-    const updateOrderStmt = db.prepare(`
-      UPDATE registrations 
-      SET razorpay_order_id = ?, order_id = ?, registration_status = 'PENDING_PAYMENT' 
-      WHERE registration_id = ?
-    `);
-    updateOrderStmt.run(rzpOrderId, rzpOrderId, registrationId);
+    await db.execute({
+      sql: `UPDATE registrations 
+            SET razorpay_order_id = ?, order_id = ?, registration_status = 'PENDING_PAYMENT' 
+            WHERE registration_id = ?`,
+      args: [rzpOrderId, rzpOrderId, registrationId]
+    });
 
-    // Track payment intent record
-    const insertPaymentStmt = db.prepare(`
-      INSERT OR REPLACE INTO payments (registration_id, razorpay_order_id, order_id, amount, currency, status, provider)
-      VALUES (?, ?, ?, ?, 'INR', 'CREATED', ?)
-    `);
-    insertPaymentStmt.run(registrationId, rzpOrderId, rzpOrderId, reg.total_amount, razorpayInstance ? 'RAZORPAY' : 'RAZORPAY_TEST_MODE');
+    await db.execute({
+      sql: `INSERT OR REPLACE INTO payments (registration_id, razorpay_order_id, order_id, amount, currency, status, provider)
+            VALUES (?, ?, ?, ?, 'INR', 'CREATED', ?)`,
+      args: [registrationId, rzpOrderId, rzpOrderId, amount, razorpayInstance ? 'RAZORPAY' : 'RAZORPAY_TEST_MODE']
+    });
 
     res.json({
       success: true,
@@ -300,7 +334,7 @@ app.post(['/api/payments/create-order', '/api/payment/create-order'], async (req
       orderId: rzpOrderId,
       registrationId: reg.registration_id,
       amount: amountInPaise,
-      displayAmount: reg.total_amount,
+      displayAmount: amount,
       currency: 'INR',
       game: reg.game,
       teamName: reg.team_name,
@@ -315,7 +349,7 @@ app.post(['/api/payments/create-order', '/api/payment/create-order'], async (req
   }
 });
 
-// 4. VERIFY PAYMENT & CONFIRM REGISTRATION (Supports both /api/payments/verify and /api/payment/verify)
+// 5. VERIFY PAYMENT & CONFIRM REGISTRATION
 app.post(['/api/payments/verify', '/api/payment/verify'], async (req, res) => {
   try {
     const { registrationId, paymentId, orderId, signature, mockGateway } = req.body;
@@ -324,8 +358,11 @@ app.post(['/api/payments/verify', '/api/payment/verify'], async (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing registrationId parameter.' });
     }
 
-    const selectStmt = db.prepare('SELECT * FROM registrations WHERE registration_id = ?');
-    const reg = selectStmt.get(registrationId);
+    const regRes = await db.execute({
+      sql: 'SELECT * FROM registrations WHERE registration_id = ?',
+      args: [registrationId]
+    });
+    const reg = regRes.rows && regRes.rows.length > 0 ? regRes.rows[0] : null;
 
     if (!reg) {
       return res.status(404).json({ success: false, error: 'Registration record not found.' });
@@ -335,7 +372,6 @@ app.post(['/api/payments/verify', '/api/payment/verify'], async (req, res) => {
     let isValidPayment = false;
 
     if (signature) {
-      // Validate Razorpay HMAC-SHA256 signature server-side
       const targetOrderId = orderId || reg.razorpay_order_id || reg.order_id;
       const expectedSignature = crypto
         .createHmac('sha256', secret)
@@ -344,70 +380,67 @@ app.post(['/api/payments/verify', '/api/payment/verify'], async (req, res) => {
 
       isValidPayment = (expectedSignature === signature);
     } else if (mockGateway || process.env.RAZORPAY_TEST_MODE === 'true' || paymentId) {
-      // Development Test Mode fallback verification
       isValidPayment = true;
     }
 
     if (!isValidPayment) {
-      const failStmt = db.prepare("UPDATE registrations SET payment_status = 'FAILED', registration_status = 'PAYMENT_FAILED' WHERE registration_id = ?");
-      failStmt.run(registrationId);
+      await db.execute({
+        sql: "UPDATE registrations SET payment_status = 'FAILED', registration_status = 'PAYMENT_FAILED' WHERE registration_id = ?",
+        args: [registrationId]
+      });
       return res.status(400).json({ success: false, error: 'Payment signature verification failed.' });
     }
 
     const finalPaymentId = paymentId || `pay_${Date.now()}_${crypto.randomBytes(3).toString('hex')}`;
     const finalOrderId = orderId || reg.razorpay_order_id || reg.order_id;
+    const amount = reg.total_amount || reg.amount;
 
-    // Execute SQLite Database Transaction to confirm registration & update payment state
-    db.exec('BEGIN TRANSACTION;');
-    try {
-      const updateStmt = db.prepare(`
-        UPDATE registrations 
-        SET payment_status = 'PAID', 
-            registration_status = 'CONFIRMED', 
-            razorpay_payment_id = ?, 
-            payment_id = ?,
-            razorpay_order_id = ?,
-            confirmed_at = CURRENT_TIMESTAMP,
-            updated_at = CURRENT_TIMESTAMP
-        WHERE registration_id = ?
-      `);
-      updateStmt.run(finalPaymentId, finalPaymentId, finalOrderId, registrationId);
+    // Execute atomic batch statements for payment confirmation
+    await db.batch([
+      {
+        sql: `UPDATE registrations 
+              SET payment_status = 'PAID', 
+                  registration_status = 'CONFIRMED', 
+                  razorpay_payment_id = ?, 
+                  payment_id = ?,
+                  razorpay_order_id = ?,
+                  confirmed_at = CURRENT_TIMESTAMP,
+                  updated_at = CURRENT_TIMESTAMP
+              WHERE registration_id = ?`,
+        args: [finalPaymentId, finalPaymentId, finalOrderId, registrationId]
+      },
+      {
+        sql: `INSERT OR REPLACE INTO payments (
+                registration_id, razorpay_order_id, razorpay_payment_id, razorpay_signature, signature,
+                order_id, payment_id, amount, currency, status, provider, verified_at, updated_at
+              )
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'INR', 'CAPTURED', ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+        args: [
+          registrationId,
+          finalOrderId,
+          finalPaymentId,
+          signature || 'SANDBOX_SIGNATURE',
+          signature || 'SANDBOX_SIGNATURE',
+          finalOrderId,
+          finalPaymentId,
+          amount,
+          process.env.RAZORPAY_TEST_MODE === 'true' ? 'RAZORPAY_TEST_MODE' : 'RAZORPAY'
+        ]
+      }
+    ]);
 
-      const payStmt = db.prepare(`
-        INSERT OR REPLACE INTO payments (
-          registration_id, razorpay_order_id, razorpay_payment_id, razorpay_signature, 
-          order_id, payment_id, amount, status, provider, verified_at
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'CAPTURED', ?, CURRENT_TIMESTAMP)
-      `);
-      payStmt.run(
-        registrationId, 
-        finalOrderId, 
-        finalPaymentId, 
-        signature || 'SANDBOX_SIGNATURE', 
-        finalOrderId, 
-        finalPaymentId, 
-        reg.total_amount, 
-        process.env.RAZORPAY_TEST_MODE === 'true' ? 'RAZORPAY_TEST_MODE' : 'RAZORPAY'
-      );
-
-      db.exec('COMMIT;');
-      console.log(`✅ Registration CONFIRMED [${registrationId}] Payment ID: ${finalPaymentId}`);
-
-    } catch (txnErr) {
-      db.exec('ROLLBACK;');
-      console.error('DB Transaction failed on payment verify:', txnErr);
-      return res.status(500).json({ success: false, error: 'Database transaction error during payment verification.' });
-    }
+    console.log(`✅ Registration CONFIRMED [${registrationId}] Payment ID: ${finalPaymentId}`);
 
     // Trigger Confirmation Email asynchronously
     setImmediate(() => {
       emailService.sendRegistrationConfirmation(registrationId);
     });
 
-    // Retrieve players for response
-    const playersStmt = db.prepare('SELECT * FROM players WHERE registration_id = ? ORDER BY player_index ASC');
-    const players = playersStmt.all(registrationId);
+    const playersRes = await db.execute({
+      sql: 'SELECT * FROM players WHERE registration_id = ? ORDER BY player_index ASC',
+      args: [registrationId]
+    });
+    const players = playersRes.rows || [];
 
     res.json({
       success: true,
@@ -424,8 +457,9 @@ app.post(['/api/payments/verify', '/api/payment/verify'], async (req, res) => {
       captainEmail: reg.captain_email,
       playerCount: reg.player_count,
       feePerPerson: reg.fee_per_person,
-      totalAmount: reg.total_amount,
-      players: players || [],
+      totalAmount: amount,
+      amount: amount,
+      players,
       paymentStatus: 'PAID',
       confirmedAt: new Date().toISOString()
     });
@@ -436,7 +470,7 @@ app.post(['/api/payments/verify', '/api/payment/verify'], async (req, res) => {
   }
 });
 
-// 5. RAZORPAY WEBHOOK HANDLER (IDEMPOTENT & HMAC SIGNED)
+// 6. RAZORPAY WEBHOOK HANDLER (IDEMPOTENT & HMAC SIGNED)
 app.post('/api/webhooks/razorpay', async (req, res) => {
   try {
     const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET || 'craftcon_webhook_secret_2026';
@@ -464,8 +498,11 @@ app.post('/api/webhooks/razorpay', async (req, res) => {
       const amount = paymentEntity?.amount ? paymentEntity.amount / 100 : null;
 
       if (orderId) {
-        const regStmt = db.prepare('SELECT * FROM registrations WHERE razorpay_order_id = ? OR order_id = ?');
-        const reg = regStmt.get(orderId, orderId);
+        const regRes = await db.execute({
+          sql: 'SELECT * FROM registrations WHERE razorpay_order_id = ? OR order_id = ?',
+          args: [orderId, orderId]
+        });
+        const reg = regRes.rows && regRes.rows.length > 0 ? regRes.rows[0] : null;
 
         if (reg) {
           // Idempotency check
@@ -474,44 +511,39 @@ app.post('/api/webhooks/razorpay', async (req, res) => {
             return res.json({ status: 'ok', message: 'Already processed.' });
           }
 
-          // Verify amount if present
-          if (amount && amount !== reg.total_amount) {
-            console.warn(`⚠️ Webhook Amount mismatch! Expected ₹${reg.total_amount}, got ₹${amount}`);
+          const expectedAmount = reg.total_amount || reg.amount;
+          if (amount && amount !== expectedAmount) {
+            console.warn(`⚠️ Webhook Amount mismatch! Expected ₹${expectedAmount}, got ₹${amount}`);
             return res.status(400).json({ status: 'amount_mismatch' });
           }
 
-          // Update DB
-          db.exec('BEGIN TRANSACTION;');
-          try {
-            const updateStmt = db.prepare(`
-              UPDATE registrations 
-              SET payment_status = 'PAID', 
-                  registration_status = 'CONFIRMED', 
-                  razorpay_payment_id = ?, 
-                  payment_id = ?,
-                  confirmed_at = CURRENT_TIMESTAMP
-              WHERE registration_id = ?
-            `);
-            updateStmt.run(paymentId || `pay_wh_${Date.now()}`, paymentId || `pay_wh_${Date.now()}`, reg.registration_id);
+          const finalPaymentId = paymentId || `pay_wh_${Date.now()}`;
 
-            const payStmt = db.prepare(`
-              INSERT OR REPLACE INTO payments (registration_id, razorpay_order_id, razorpay_payment_id, amount, status, provider, verified_at)
-              VALUES (?, ?, ?, ?, 'CAPTURED', 'RAZORPAY_WEBHOOK', CURRENT_TIMESTAMP)
-            `);
-            payStmt.run(reg.registration_id, orderId, paymentId || `pay_wh_${Date.now()}`, reg.total_amount);
+          await db.batch([
+            {
+              sql: `UPDATE registrations 
+                    SET payment_status = 'PAID', 
+                        registration_status = 'CONFIRMED', 
+                        razorpay_payment_id = ?, 
+                        payment_id = ?,
+                        confirmed_at = CURRENT_TIMESTAMP,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE registration_id = ?`,
+              args: [finalPaymentId, finalPaymentId, reg.registration_id]
+            },
+            {
+              sql: `INSERT OR REPLACE INTO payments (
+                      registration_id, razorpay_order_id, razorpay_payment_id, amount, status, provider, verified_at, updated_at
+                    ) VALUES (?, ?, ?, ?, 'CAPTURED', 'RAZORPAY_WEBHOOK', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+              args: [reg.registration_id, orderId, finalPaymentId, expectedAmount]
+            }
+          ]);
 
-            db.exec('COMMIT;');
-            console.log(`✅ Webhook: Confirmed Registration ${reg.registration_id}`);
+          console.log(`✅ Webhook: Confirmed Registration ${reg.registration_id}`);
 
-            // Send Email Notification
-            setImmediate(() => {
-              emailService.sendRegistrationConfirmation(reg.registration_id);
-            });
-
-          } catch (e) {
-            db.exec('ROLLBACK;');
-            console.error('Webhook DB transaction error:', e);
-          }
+          setImmediate(() => {
+            emailService.sendRegistrationConfirmation(reg.registration_id);
+          });
         }
       }
     }
@@ -524,25 +556,30 @@ app.post('/api/webhooks/razorpay', async (req, res) => {
   }
 });
 
-// 6. GET REGISTRATION BY ID (VOUCHER / RECEIPT LOOKUP)
-app.get('/api/registrations/:id', (req, res) => {
+// 7. GET REGISTRATION BY ID (VOUCHER / RECEIPT LOOKUP)
+app.get('/api/registrations/:id', async (req, res) => {
   try {
     const regId = req.params.id;
 
-    const selectStmt = db.prepare('SELECT * FROM registrations WHERE registration_id = ?');
-    const reg = selectStmt.get(regId);
+    const regRes = await db.execute({
+      sql: 'SELECT * FROM registrations WHERE registration_id = ?',
+      args: [regId]
+    });
+    const reg = regRes.rows && regRes.rows.length > 0 ? regRes.rows[0] : null;
 
     if (!reg) {
       return res.status(404).json({ success: false, error: 'Registration not found.' });
     }
 
-    const playersStmt = db.prepare('SELECT * FROM players WHERE registration_id = ? ORDER BY player_index ASC');
-    const players = playersStmt.all(regId);
+    const playersRes = await db.execute({
+      sql: 'SELECT * FROM players WHERE registration_id = ? ORDER BY player_index ASC',
+      args: [regId]
+    });
 
     res.json({
       success: true,
       registration: reg,
-      players: players || []
+      players: playersRes.rows || []
     });
   } catch (error) {
     console.error('Error fetching registration:', error);
@@ -550,8 +587,8 @@ app.get('/api/registrations/:id', (req, res) => {
   }
 });
 
-// 7. ADMIN REGISTRATIONS EXPLORER & SEARCH
-app.get('/api/admin/registrations', (req, res) => {
+// 8. ADMIN REGISTRATIONS EXPLORER & SEARCH
+app.get('/api/admin/registrations', async (req, res) => {
   try {
     const { game, category, payment_status, search } = req.query;
     let sql = 'SELECT * FROM registrations WHERE 1=1';
@@ -577,13 +614,12 @@ app.get('/api/admin/registrations', (req, res) => {
 
     sql += ' ORDER BY id DESC';
 
-    const stmt = db.prepare(sql);
-    const rows = stmt.all(...params);
+    const result = await db.execute({ sql, args: params });
 
     res.json({
       success: true,
-      count: rows.length,
-      registrations: rows
+      count: result.rows.length,
+      registrations: result.rows
     });
   } catch (error) {
     console.error('Error in admin registrations:', error);
@@ -591,15 +627,14 @@ app.get('/api/admin/registrations', (req, res) => {
   }
 });
 
-// 8. ADMIN PAYMENTS RECONCILIATION API
-app.get('/api/admin/payments', (req, res) => {
+// 9. ADMIN PAYMENTS RECONCILIATION API
+app.get('/api/admin/payments', async (req, res) => {
   try {
-    const stmt = db.prepare('SELECT * FROM payments ORDER BY id DESC');
-    const rows = stmt.all();
+    const result = await db.execute('SELECT * FROM payments ORDER BY id DESC');
     res.json({
       success: true,
-      count: rows.length,
-      payments: rows
+      count: result.rows.length,
+      payments: result.rows
     });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to fetch payments.' });
@@ -623,7 +658,12 @@ app.get('/admin', (req, res) => {
 
 // Start Express Server (only listen when run directly)
 if (require.main === module) {
-  app.listen(PORT, () => {
+  app.listen(PORT, async () => {
+    try {
+      await initDb();
+    } catch (e) {
+      console.warn('Startup initDb warning:', e.message);
+    }
     console.log(`
     ============================================================
     🎮 CRAFTCON 2K26 GAMING ARENA SERVER RUNNING
@@ -633,6 +673,7 @@ if (require.main === module) {
     ⚔️ Hackathon:    https://tech-hack-three.vercel.app
     📊 Admin Portal: http://localhost:${PORT}/admin.html
     📊 Admin API:    http://localhost:${PORT}/api/admin/registrations
+    ❤️ Health API:   http://localhost:${PORT}/api/health
     ============================================================
     `);
   });

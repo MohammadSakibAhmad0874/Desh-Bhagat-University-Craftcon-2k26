@@ -1,116 +1,39 @@
-const { DatabaseSync } = require('node:sqlite');
+const { createClient } = require('@libsql/client');
 const path = require('path');
-const os = require('os');
-const fs = require('fs');
+require('dotenv').config();
 
-let DB_PATH = path.join(__dirname, 'craftcon_gaming.db');
+/**
+ * CRAFTCON '26 GAMING ARENA — TURSO / libSQL DATABASE CLIENT
+ * Supports Turso Cloud (process.env.TURSO_DATABASE_URL) & Local file mode (file:craftcon_gaming.db)
+ */
 
-// Handle Vercel Serverless environment where root filesystem is read-only
-if (process.env.VERCEL) {
-  const tmpPath = path.join(os.tmpdir(), 'craftcon_gaming.db');
-  if (!fs.existsSync(tmpPath)) {
-    if (fs.existsSync(DB_PATH)) {
-      try {
-        fs.copyFileSync(DB_PATH, tmpPath);
-      } catch (e) {
-        console.warn('Could not copy initial DB to /tmp:', e.message);
-      }
-    }
-  }
-  DB_PATH = tmpPath;
-}
+const rawUrl = process.env.TURSO_DATABASE_URL;
+const authToken = process.env.TURSO_AUTH_TOKEN || undefined;
+
+// Fallback to local libSQL file if no Turso URL provided
+const url = rawUrl && rawUrl.trim() ? rawUrl.trim() : `file:${path.join(__dirname, 'craftcon_gaming.db')}`;
 
 let db;
 try {
-  db = new DatabaseSync(DB_PATH);
-  console.log(`⚡ Connected to SQLite database: ${DB_PATH}`);
+  db = createClient({
+    url,
+    ...(authToken ? { authToken } : {})
+  });
+  console.log(`⚡ Initialized libSQL client (${url.startsWith('file:') ? 'Local SQLite File' : 'Turso Cloud Database'})`);
 } catch (err) {
-  console.error('❌ Failed to open SQLite database:', err.message);
-  throw err;
+  console.error('❌ Failed to initialize libSQL database client:', err.message);
 }
 
-// Enable Foreign Keys
-db.exec('PRAGMA foreign_keys = ON;');
+let isInitialized = false;
+let initPromise = null;
 
-// 1. REGISTRATIONS TABLE
-db.exec(`
-  CREATE TABLE IF NOT EXISTS registrations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    registration_id TEXT UNIQUE NOT NULL,
-    category TEXT NOT NULL,
-    game TEXT NOT NULL,
-    registration_type TEXT NOT NULL,
-    team_name TEXT,
-    college TEXT NOT NULL,
-    captain_name TEXT NOT NULL,
-    captain_email TEXT NOT NULL,
-    captain_phone TEXT NOT NULL,
-    player_count INTEGER NOT NULL,
-    total_amount REAL NOT NULL,
-    fee_per_person REAL NOT NULL DEFAULT 50,
-    currency TEXT DEFAULT 'INR',
-    payment_status TEXT NOT NULL DEFAULT 'PENDING',
-    registration_status TEXT NOT NULL DEFAULT 'PENDING',
-    razorpay_order_id TEXT,
-    razorpay_payment_id TEXT,
-    order_id TEXT,
-    payment_id TEXT,
-    email_status TEXT DEFAULT 'PENDING',
-    email_sent_at DATETIME,
-    email_attempts INTEGER DEFAULT 0,
-    last_email_error TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME,
-    confirmed_at DATETIME
-  );
-`);
-
-// 2. PLAYERS TABLE
-db.exec(`
-  CREATE TABLE IF NOT EXISTS players (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    registration_id TEXT NOT NULL,
-    player_index INTEGER NOT NULL,
-    name TEXT NOT NULL,
-    in_game_name TEXT,
-    game_uid TEXT,
-    email TEXT,
-    phone TEXT,
-    role TEXT NOT NULL DEFAULT 'PLAYER',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (registration_id) REFERENCES registrations (registration_id) ON DELETE CASCADE
-  );
-`);
-
-// 3. PAYMENTS TABLE
-db.exec(`
-  CREATE TABLE IF NOT EXISTS payments (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    registration_id TEXT NOT NULL,
-    razorpay_order_id TEXT UNIQUE,
-    razorpay_payment_id TEXT UNIQUE,
-    razorpay_signature TEXT,
-    order_id TEXT,
-    payment_id TEXT,
-    amount REAL NOT NULL,
-    currency TEXT DEFAULT 'INR',
-    status TEXT NOT NULL DEFAULT 'CREATED',
-    method TEXT DEFAULT 'RAZORPAY',
-    provider TEXT NOT NULL DEFAULT 'RAZORPAY',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    verified_at DATETIME,
-    FOREIGN KEY (registration_id) REFERENCES registrations (registration_id) ON DELETE CASCADE
-  );
-`);
-
-// Safe Migration Helper for adding missing columns to existing databases
-function ensureColumnExists(tableName, columnName, columnDef) {
+async function ensureColumnExists(tableName, columnName, columnDef) {
   try {
-    const pragmaStmt = db.prepare(`PRAGMA table_info(${tableName})`);
-    const columns = pragmaStmt.all();
-    const hasColumn = columns.some(col => col.name === columnName);
+    const pragmaRes = await db.execute(`PRAGMA table_info(${tableName})`);
+    const columns = pragmaRes.rows || [];
+    const hasColumn = columns.some(col => (col.name || col[1]) === columnName);
     if (!hasColumn) {
-      db.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDef};`);
+      await db.execute(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${columnDef};`);
       console.log(`➕ Added missing column '${columnName}' to '${tableName}' table.`);
     }
   } catch (e) {
@@ -118,22 +41,128 @@ function ensureColumnExists(tableName, columnName, columnDef) {
   }
 }
 
-// Run migrations for any existing database tables
-ensureColumnExists('registrations', 'currency', "TEXT DEFAULT 'INR'");
-ensureColumnExists('registrations', 'razorpay_order_id', 'TEXT');
-ensureColumnExists('registrations', 'razorpay_payment_id', 'TEXT');
-ensureColumnExists('registrations', 'email_status', "TEXT DEFAULT 'PENDING'");
-ensureColumnExists('registrations', 'email_sent_at', 'DATETIME');
-ensureColumnExists('registrations', 'email_attempts', 'INTEGER DEFAULT 0');
-ensureColumnExists('registrations', 'last_email_error', 'TEXT');
-ensureColumnExists('registrations', 'updated_at', 'DATETIME');
-ensureColumnExists('registrations', 'confirmed_at', 'DATETIME');
+/**
+ * Initializes Database Tables & Migration Columns
+ */
+async function initDb() {
+  if (isInitialized) return true;
+  if (initPromise) return initPromise;
 
-ensureColumnExists('payments', 'razorpay_order_id', 'TEXT');
-ensureColumnExists('payments', 'razorpay_payment_id', 'TEXT');
-ensureColumnExists('payments', 'razorpay_signature', 'TEXT');
-ensureColumnExists('payments', 'method', "TEXT DEFAULT 'RAZORPAY'");
+  initPromise = (async () => {
+    try {
+      if (!db) {
+        throw new Error('Database client is not initialized.');
+      }
 
-console.log('✅ SQLite Schema initialized & verified successfully (registrations, players, payments).');
+      // 1. REGISTRATIONS TABLE
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS registrations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          registration_id TEXT UNIQUE NOT NULL,
+          category TEXT NOT NULL,
+          game TEXT NOT NULL,
+          registration_type TEXT NOT NULL,
+          team_name TEXT,
+          college TEXT NOT NULL,
+          captain_name TEXT NOT NULL,
+          captain_email TEXT NOT NULL,
+          captain_phone TEXT NOT NULL,
+          player_count INTEGER NOT NULL,
+          total_amount REAL NOT NULL,
+          amount REAL,
+          fee_per_person REAL NOT NULL DEFAULT 50,
+          currency TEXT DEFAULT 'INR',
+          payment_status TEXT NOT NULL DEFAULT 'PENDING',
+          registration_status TEXT NOT NULL DEFAULT 'PENDING',
+          razorpay_order_id TEXT,
+          razorpay_payment_id TEXT,
+          order_id TEXT,
+          payment_id TEXT,
+          email_status TEXT DEFAULT 'PENDING',
+          email_sent_at DATETIME,
+          email_attempts INTEGER DEFAULT 0,
+          last_email_error TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME,
+          confirmed_at DATETIME
+        );
+      `);
 
-module.exports = db;
+      // 2. PLAYERS TABLE
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS players (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          registration_id TEXT NOT NULL,
+          player_index INTEGER NOT NULL,
+          name TEXT NOT NULL,
+          full_name TEXT,
+          in_game_name TEXT,
+          game_uid TEXT,
+          email TEXT,
+          phone TEXT,
+          role TEXT NOT NULL DEFAULT 'PLAYER',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      // 3. PAYMENTS TABLE
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS payments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          registration_id TEXT NOT NULL,
+          razorpay_order_id TEXT,
+          razorpay_payment_id TEXT,
+          razorpay_signature TEXT,
+          signature TEXT,
+          order_id TEXT,
+          payment_id TEXT,
+          amount REAL NOT NULL,
+          currency TEXT DEFAULT 'INR',
+          status TEXT NOT NULL DEFAULT 'CREATED',
+          method TEXT DEFAULT 'RAZORPAY',
+          provider TEXT NOT NULL DEFAULT 'RAZORPAY',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          verified_at DATETIME,
+          updated_at DATETIME
+        );
+      `);
+
+      // Run Column Migrations for Existing Tables
+      await ensureColumnExists('registrations', 'amount', 'REAL');
+      await ensureColumnExists('registrations', 'currency', "TEXT DEFAULT 'INR'");
+      await ensureColumnExists('players', 'full_name', 'TEXT');
+      await ensureColumnExists('payments', 'signature', 'TEXT');
+      await ensureColumnExists('payments', 'updated_at', 'DATETIME');
+
+      isInitialized = true;
+      console.log('✅ Turso/libSQL Schema initialized successfully (registrations, players, payments).');
+      return true;
+    } catch (err) {
+      console.error('⚠️ Database schema initialization warning:', err.message);
+      initPromise = null;
+      return false;
+    }
+  })();
+
+  return initPromise;
+}
+
+/**
+ * Health Check Helper
+ */
+async function testDbConnection() {
+  try {
+    if (!db) return false;
+    const res = await db.execute('SELECT 1 as alive');
+    return res && res.rows && res.rows.length > 0;
+  } catch (err) {
+    console.error('Database health check failed:', err.message);
+    return false;
+  }
+}
+
+module.exports = {
+  db,
+  initDb,
+  testDbConnection
+};

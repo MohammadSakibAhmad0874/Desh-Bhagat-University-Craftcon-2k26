@@ -1,5 +1,5 @@
 const nodemailer = require('nodemailer');
-const db = require('./db');
+const { db } = require('./db');
 
 /**
  * CRAFTCON '26 GAMING ARENA — TRANSACTIONAL EMAIL SERVICE
@@ -35,7 +35,7 @@ function buildHtmlEmail(reg, players) {
     playersRowsHtml = players.map(p => `
       <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
         <td style="padding: 10px; color: #ffb703; font-weight: bold;">${p.role || 'PLAYER'}</td>
-        <td style="padding: 10px; color: #ffffff;">${p.name}</td>
+        <td style="padding: 10px; color: #ffffff;">${p.name || p.full_name}</td>
         <td style="padding: 10px; color: #00f2fe;">${p.in_game_name || 'N/A'}</td>
         <td style="padding: 10px; color: #70e000;">${p.game_uid || 'N/A'}</td>
       </tr>
@@ -87,11 +87,11 @@ function buildHtmlEmail(reg, players) {
           </tr>
           <tr>
             <td style="padding:8px 0; color:#94a3b8;">Category:</td>
-            <td style="padding:8px 0; color:#ffffff; font-weight:bold; text-align:right;">${reg.category.toUpperCase()} GAMING</td>
+            <td style="padding:8px 0; color:#ffffff; font-weight:bold; text-align:right;">${(reg.category || 'ONLINE').toUpperCase()} GAMING</td>
           </tr>
           <tr>
             <td style="padding:8px 0; color:#94a3b8;">Registration Type:</td>
-            <td style="padding:8px 0; color:#ffffff; font-weight:bold; text-align:right;">${reg.registration_type.toUpperCase()}</td>
+            <td style="padding:8px 0; color:#ffffff; font-weight:bold; text-align:right;">${(reg.registration_type || 'SOLO').toUpperCase()}</td>
           </tr>
           ${isSquad ? `
           <tr>
@@ -109,12 +109,12 @@ function buildHtmlEmail(reg, players) {
           </tr>
           <tr>
             <td style="padding:8px 0; color:#94a3b8;">Total Amount Paid:</td>
-            <td style="padding:8px 0; color:#70e000; font-weight:bold; font-size:16px; text-align:right;">₹${reg.total_amount} INR</td>
+            <td style="padding:8px 0; color:#70e000; font-weight:bold; font-size:16px; text-align:right;">₹${reg.total_amount || reg.amount} INR</td>
           </tr>
-          ${reg.payment_id ? `
+          ${reg.payment_id || reg.razorpay_payment_id ? `
           <tr>
             <td style="padding:8px 0; color:#94a3b8;">Payment Reference ID:</td>
-            <td style="padding:8px 0; color:#00f2fe; font-family:monospace; text-align:right;">${reg.payment_id}</td>
+            <td style="padding:8px 0; color:#00f2fe; font-family:monospace; text-align:right;">${reg.payment_id || reg.razorpay_payment_id}</td>
           </tr>
           ` : ''}
         </table>
@@ -168,7 +168,7 @@ function buildHtmlEmail(reg, players) {
 function buildTextEmail(reg, players) {
   let rosterText = '';
   if (players && players.length > 0) {
-    rosterText = players.map(p => ` - ${p.role}: ${p.name} (IGN: ${p.in_game_name || 'N/A'}, UID: ${p.game_uid || 'N/A'})`).join('\n');
+    rosterText = players.map(p => ` - ${p.role}: ${p.name || p.full_name} (IGN: ${p.in_game_name || 'N/A'}, UID: ${p.game_uid || 'N/A'})`).join('\n');
   }
 
   return `
@@ -182,14 +182,14 @@ REGISTRATION DETAILS
 --------------------------------------------------
 Registration ID: ${reg.registration_id}
 Game:            ${reg.game}
-Category:        ${reg.category.toUpperCase()} GAMING
-Type:            ${reg.registration_type.toUpperCase()}
+Category:        ${(reg.category || 'ONLINE').toUpperCase()} GAMING
+Type:            ${(reg.registration_type || 'SOLO').toUpperCase()}
 Team Name:       ${reg.team_name || 'N/A'}
 College:         ${reg.college}
 Players:         ${reg.player_count}
-Amount Paid:     ₹${reg.total_amount} INR
+Amount Paid:     ₹${reg.total_amount || reg.amount} INR
 Payment Status:  PAID
-Payment Ref:     ${reg.payment_id || 'N/A'}
+Payment Ref:     ${reg.payment_id || reg.razorpay_payment_id || 'N/A'}
 
 ROSTER PARTICIPANTS
 --------------------------------------------------
@@ -212,16 +212,27 @@ Please keep your Registration ID for event entry communication.
  */
 async function sendRegistrationConfirmation(registrationId) {
   try {
-    const regStmt = db.prepare('SELECT * FROM registrations WHERE registration_id = ?');
-    const reg = regStmt.get(registrationId);
+    if (!db) {
+      console.warn('[EmailService] DB client not initialized.');
+      return { success: false, error: 'Database client not ready' };
+    }
+
+    const regRes = await db.execute({
+      sql: 'SELECT * FROM registrations WHERE registration_id = ?',
+      args: [registrationId]
+    });
+    const reg = regRes.rows && regRes.rows.length > 0 ? regRes.rows[0] : null;
 
     if (!reg) {
       console.warn(`[EmailService] Registration ${registrationId} not found.`);
       return { success: false, error: 'Registration not found' };
     }
 
-    const playersStmt = db.prepare('SELECT * FROM players WHERE registration_id = ? ORDER BY player_index ASC');
-    const players = playersStmt.all(registrationId);
+    const playersRes = await db.execute({
+      sql: 'SELECT * FROM players WHERE registration_id = ? ORDER BY player_index ASC',
+      args: [registrationId]
+    });
+    const players = playersRes.rows || [];
 
     const htmlContent = buildHtmlEmail(reg, players);
     const textContent = buildTextEmail(reg, players);
@@ -254,12 +265,12 @@ async function sendRegistrationConfirmation(registrationId) {
     }
 
     // Update DB email status
-    const updateStmt = db.prepare(`
-      UPDATE registrations 
-      SET email_status = 'SENT', email_sent_at = CURRENT_TIMESTAMP, email_attempts = email_attempts + 1, last_email_error = NULL
-      WHERE registration_id = ?
-    `);
-    updateStmt.run(registrationId);
+    await db.execute({
+      sql: `UPDATE registrations 
+            SET email_status = 'SENT', email_sent_at = CURRENT_TIMESTAMP, email_attempts = email_attempts + 1, last_email_error = NULL
+            WHERE registration_id = ?`,
+      args: [registrationId]
+    });
 
     // Send Internal Admin Notification if configured
     if (process.env.ADMIN_EMAIL && transporter) {
@@ -268,7 +279,7 @@ async function sendRegistrationConfirmation(registrationId) {
           from: fromAddress,
           to: process.env.ADMIN_EMAIL,
           subject: `[ADMIN ALERT] New Confirmed Registration: ${reg.registration_id} (${reg.game})`,
-          text: `New Registration Confirmed!\n\nID: ${reg.registration_id}\nGame: ${reg.game}\nTeam: ${reg.team_name}\nCollege: ${reg.college}\nAmount: ₹${reg.total_amount}`
+          text: `New Registration Confirmed!\n\nID: ${reg.registration_id}\nGame: ${reg.game}\nTeam: ${reg.team_name}\nCollege: ${reg.college}\nAmount: ₹${reg.total_amount || reg.amount}`
         });
       } catch (adminErr) {
         console.warn('Failed to send admin email alert:', adminErr.message);
@@ -282,12 +293,14 @@ async function sendRegistrationConfirmation(registrationId) {
 
     // Record email failure state in DB without throwing
     try {
-      const failStmt = db.prepare(`
-        UPDATE registrations 
-        SET email_status = 'FAILED', email_attempts = email_attempts + 1, last_email_error = ?
-        WHERE registration_id = ?
-      `);
-      failStmt.run(error.message, registrationId);
+      if (db) {
+        await db.execute({
+          sql: `UPDATE registrations 
+                SET email_status = 'FAILED', email_attempts = email_attempts + 1, last_email_error = ?
+                WHERE registration_id = ?`,
+          args: [error.message, registrationId]
+        });
+      }
     } catch (dbErr) {
       console.error('Failed to update email status in DB:', dbErr.message);
     }
