@@ -27,7 +27,8 @@ app.use(express.json({
   }
 }));
 
-app.use(express.static(path.join(__dirname)));
+app.use(express.static(path.resolve(__dirname)));
+app.use('/assets', express.static(path.resolve(__dirname, 'assets')));
 
 // Middleware to ensure DB Schema is initialized on API requests
 app.use(async (req, res, next) => {
@@ -645,19 +646,36 @@ app.get('/api/admin/payments', async (req, res) => {
   }
 });
 
+// Explicit static asset handlers to guarantee HTTP 200 delivery
+app.get('/gaming.js', (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'gaming.js'));
+});
+app.get('/gaming.css', (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'gaming.css'));
+});
+app.get('/style.css', (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'style.css'));
+});
+
 // Root route serves Gaming Arena homepage
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'gaming.html'));
+  res.sendFile(path.resolve(__dirname, 'index.html'));
 });
 
 // Fallback Route to serve gaming.html as default landing if direct route hit
 app.get('/gaming', (req, res) => {
-  res.sendFile(path.join(__dirname, 'gaming.html'));
+  res.sendFile(path.resolve(__dirname, 'gaming.html'));
+});
+app.get('/gaming.html', (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'gaming.html'));
 });
 
 // Admin Dashboard UI route
 app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'admin.html'));
+  res.sendFile(path.resolve(__dirname, 'admin.html'));
+});
+app.get('/admin.html', (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'admin.html'));
 });
 
 // Start Express Server (only listen when run directly)

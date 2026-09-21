@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRAFTCON '26 GAMING ARENA — University Esports Tournament | Desh Bhagat University</title>
+  <meta name="description" content="The official CRAFTCON 2K26 Gaming Arena tournament hosted by Desh Bhagat University. BGMI, Free Fire, Mobile Legends, Ludo, Chess & Carrom. ₹50/player registration.">
+  <meta name="keywords" content="gaming arena, esports tournament, CRAFTCON 2026, BGMI tournament, Free Fire, Mobile Legends, Desh Bhagat University, Ludo, Chess, Carrom">
+  
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="CRAFTCON '26 GAMING ARENA — Enter the World. Join the Battle.">
+  <meta property="og:description" content="Official Minecraft-themed esports tournament at Desh Bhagat University. Register your squad or enter solo for ₹50 per player.">
+  <meta property="og:image" content="assets/images/games/bgmi_banner.jpg">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%2308080d'/><rect x='4' y='4' width='24' height='24' fill='%23ff0054'/><rect x='8' y='8' width='16' height='16' fill='%2300f2fe'/><rect x='12' y='12' width='8' height='8' fill='%23ffbe0b'/></svg>">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Silkscreen:wght@400;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- External Animation Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
+  <script src="https://unpkg.com/lenis@1.1.9/dist/lenis.min.js" defer></script>
+
+  <!-- Razorpay Checkout Integration (Optional Gateway Connector) -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="gaming.css">
+</head>
+<body class="smooth-scroll-body">
+
+  <!-- GLOBAL CONTINUOUS FULL-PAGE MINECRAFT BACKGROUND LAYER -->
+  <div class="global-page-bg" aria-hidden="true">
+    <img src="assets/images/full_minecraft_background.jpg" alt="CRAFTCON 2K26 Minecraft World" class="bg-tall-img">
+    <div class="global-bg-overlay"></div>
+  </div>
+
+  <!-- WebGL 3D Voxel Background Canvas -->
+  <canvas id="webgl-canvas" class="webgl-canvas" aria-hidden="true"></canvas>
+
+  <!-- Sticky Minecraft HUD Bar -->
+  <div class="mc-hud-overlay" id="mc-hud-bar" aria-label="Arena HUD">
+    <div class="mc-hud-container">
+      <div class="mc-hud-top-row">
+        <div class="mc-hearts-strip" title="10/10 Hearts: Arena Live & Ready">
+          <span class="mc-heart">❤️</span><span class="mc-heart">❤️</span><span class="mc-heart">❤️</span><span class="mc-heart">❤️</span><span class="mc-heart">❤️</span>
+          <span class="mc-heart">❤️</span><span class="mc-heart">❤️</span><span class="mc-heart">❤️</span><span class="mc-heart">❤️</span><span class="mc-heart">❤️</span>
+        </div>
+        <div class="mc-hunger-strip" title="Energy & Gaming Stations Active">
+          <span class="mc-hunger">🍗</span><span class="mc-hunger">🍗</span><span class="mc-hunger">🍗</span><span class="mc-hunger">🍗</span><span class="mc-hunger">🍗</span>
+          <span class="mc-hunger">🍗</span><span class="mc-hunger">🍗</span><span class="mc-hunger">🍗</span><span class="mc-hunger">🍗</span><span class="mc-hunger">🍗</span>
+        </div>
+      </div>
+      <div class="mc-xp-bar-wrap">
+        <div class="mc-xp-bar-bg">
+          <div class="mc-xp-bar-fill" id="mc-xp-fill"></div>
+        </div>
+        <span class="mc-xp-level-number" id="mc-xp-level">26</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header & Navigation -->
+  <header id="site-header" class="site-header">
+    <div class="header-container">
+      <a href="#hero" class="brand-wordmark">
+        <span class="nav-dbu-badge">
+          <img src="assets/images/dbu_logo_cropped.png" alt="DBU Logo" class="nav-dbu-img" width="30" height="30">
+        </span>
+        <span class="brand-cube" style="background:#ff0054;"></span>
+        <span class="brand-text">CRAFTCON<span class="brand-year">'26</span></span>
+        <span class="brand-tag" style="background:#ff0054; color:#fff;">ARENA</span>
+      </a>
+
+      <nav class="desktop-nav">
+        <ul class="nav-links">
+          <li><a href="#hero" class="nav-link">HOME</a></li>
+          <li><a href="#games" class="nav-link">GAMES</a></li>
+          <li><a href="#tournament" class="nav-link">TOURNAMENT</a></li>
+          <li><a href="#rules" class="nav-link">RULES</a></li>
+          <li><a href="#faq" class="nav-link">FAQ</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-actions">
+        <!-- Switch to Hackathon Site -->
+        <a href="https://tech-hack-three.vercel.app" target="_blank" rel="noopener noreferrer" class="btn-gaming-secondary" style="padding: 8px 16px; font-size: 0.85rem;" title="Switch to Hackathon Website">
+          <span>⚔️ HACKATHON</span>
+        </a>
+
+        <!-- Centralized Register Button -->
+        <button class="pill-cta-btn open-gaming-reg-btn" style="background:var(--color-green); border-color:var(--mc-xp-green);">
+          <span>REGISTER NOW</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO SECTION -->
+  <section id="hero" class="gaming-hero">
+    <div class="gaming-hero-content">
+      <div class="gaming-badge-pill">
+        <span>🎮 DESH BHAGAT UNIVERSITY GAMING TOURNAMENT</span>
+      </div>
+      <h1 class="gaming-main-title">
+        CRAFTCON 2K26<br>
+        <span class="esports-text">GAMING ARENA</span>
+      </h1>
+      <p class="gaming-hero-tagline">
+        ENTER THE WORLD. JOIN THE BATTLE. BUILD YOUR SQUAD. CLAIM YOUR VICTORY.
+      </p>
+
+      <div class="hero-event-details">
+        <div class="detail-line"><strong>📅 DATE & TIME:</strong> 26–27 OCTOBER 2026 • 10:00 AM ONWARDS</div>
+        <div class="detail-line"><strong>📍 VENUE:</strong> DESH BHAGAT UNIVERSITY</div>
+        <div class="detail-line"><strong>🎓 ORGANIZED BY:</strong> Faculty of Engineering, Technology and Computing</div>
+      </div>
+
+      <!-- Registration Fee Block with REGISTER NOW CTA Directly Below -->
+      <div class="hero-fee-block">
+        <div class="fee-label">REGISTRATION FEE</div>
+        <div class="fee-value">₹50 PER PERSON</div>
+        <div class="fee-sub">BIG GAMES • SMALL ENTRY • EPIC MEMORIES</div>
+      </div>
+
+      <div class="gaming-hero-actions">
+        <button class="btn-gaming-primary open-gaming-reg-btn">
+          <span>⚔️ REGISTER NOW</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <a href="#games" class="btn-gaming-secondary">
+          <span>EXPLORE GAMES</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- GAME SHOWCASE ("CHOOSE YOUR BATTLE") -->
+  <section id="games" class="game-showcase-section">
+    <div class="section-header-centered reveal-on-scroll">
+      <span class="pixel-tag" style="color:var(--color-amber);">SELECT YOUR DISCIPLINE</span>
+      <h2 class="gaming-main-title" style="font-size: 2.8rem; margin-top:10px;">CHOOSE YOUR BATTLE</h2>
+      <p style="color:var(--text-muted); max-width:600px; margin:0 auto;">
+        Compete in high-stakes online esports or take the fight to the table in offline board tournaments.
+      </p>
+    </div>
+
+    <!-- Category Filter Tabs -->
+    <div class="gaming-filter-tabs reveal-on-scroll delay-1">
+      <button class="filter-btn active" data-filter="all">ALL GAMES (6)</button>
+      <button class="filter-btn" data-filter="online">⚔️ ONLINE GAMING (SQUADS)</button>
+      <button class="filter-btn" data-filter="offline">🏆 OFFLINE GAMING (SOLO)</button>
+    </div>
+
+    <!-- Game Cards Grid -->
+    <div class="games-grid" id="games-grid">
+      <!-- BGMI Card -->
+      <div class="game-card reveal-on-scroll delay-1" data-category="online" data-game="BGMI">
+        <div class="game-card-img-wrap">
+          <img src="assets/images/games/bgmi_banner.jpg" alt="BGMI Battlegrounds Mobile India">
+          <span class="game-card-badge">ONLINE • SQUAD</span>
+        </div>
+        <div class="game-card-body">
+          <h3 class="game-card-title">BGMI</h3>
+          <p class="game-card-desc">Tactical 36-minute Battle Royale squad showdown on Erangel. 4 players per squad.</p>
+          <div class="game-meta-row">
+            <div class="meta-item">
+              <span class="meta-label">PLAYERS</span>
+              <span class="meta-val">4 PLAYERS</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">TOTAL FEE</span>
+              <span class="meta-val">₹200 (4 × ₹50)</span>
+            </div>
+          </div>
+          <div class="game-card-actions">
+            <button class="btn-card-details" data-game-id="BGMI">VIEW DETAILS</button>
+            <button class="btn-card-register open-gaming-reg-btn" data-preset-game="BGMI">REGISTER NOW</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Free Fire Card -->
+      <div class="game-card reveal-on-scroll delay-2" data-category="online" data-game="FREE_FIRE">
+        <div class="game-card-img-wrap">
+          <img src="assets/images/games/freefire_banner.jpg" alt="Free Fire MAX">
+          <span class="game-card-badge">ONLINE • SQUAD</span>
+        </div>
+        <div class="game-card-body">
+          <h3 class="game-card-title">FREE FIRE MAX</h3>
+          <p class="game-card-desc">High-octane fast-paced 4v4 Clash Squad and Battle Royale arena combat.</p>
+          <div class="game-meta-row">
+            <div class="meta-item">
+              <span class="meta-label">PLAYERS</span>
+              <span class="meta-val">4 PLAYERS</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">TOTAL FEE</span>
+              <span class="meta-val">₹200 (4 × ₹50)</span>
+            </div>
+          </div>
+          <div class="game-card-actions">
+            <button class="btn-card-details" data-game-id="FREE_FIRE">VIEW DETAILS</button>
+            <button class="btn-card-register open-gaming-reg-btn" data-preset-game="FREE_FIRE">REGISTER NOW</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Legends Card -->
+      <div class="game-card reveal-on-scroll delay-3" data-category="online" data-game="MOBILE_LEGENDS">
+        <div class="game-card-img-wrap">
+          <img src="assets/images/games/mlbb_banner.jpg" alt="Mobile Legends Bang Bang">
+          <span class="game-card-badge">ONLINE • SQUAD</span>
+        </div>
+        <div class="game-card-body">
+          <h3 class="game-card-title">MOBILE LEGENDS</h3>
+          <p class="game-card-desc">5v5 MOBA strategic lane warfare, jungle objectives, and base destruction.</p>
+          <div class="game-meta-row">
+            <div class="meta-item">
+              <span class="meta-label">PLAYERS</span>
+              <span class="meta-val">5 PLAYERS</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">TOTAL FEE</span>
+              <span class="meta-val">₹250 (5 × ₹50)</span>
+            </div>
+          </div>
+          <div class="game-card-actions">
+            <button class="btn-card-details" data-game-id="MOBILE_LEGENDS">VIEW DETAILS</button>
+            <button class="btn-card-register open-gaming-reg-btn" data-preset-game="MOBILE_LEGENDS">REGISTER NOW</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ludo Card -->
+      <div class="game-card reveal-on-scroll delay-1" data-category="offline" data-game="LUDO">
+        <div class="game-card-img-wrap">
+          <img src="assets/images/games/ludo_banner.jpg" alt="Ludo King Championship">
+          <span class="game-card-badge" style="border-color:var(--color-green); color:var(--color-green-bright);">OFFLINE • SOLO</span>
+        </div>
+        <div class="game-card-body">
+          <h3 class="game-card-title">LUDO KING</h3>
+          <p class="game-card-desc">Physical board-to-table dice strategy combat with zero ping latency.</p>
+          <div class="game-meta-row">
+            <div class="meta-item">
+              <span class="meta-label">PLAYERS</span>
+              <span class="meta-val">1 PLAYER</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">TOTAL FEE</span>
+              <span class="meta-val">₹50</span>
+            </div>
+          </div>
+          <div class="game-card-actions">
+            <button class="btn-card-details" data-game-id="LUDO">VIEW DETAILS</button>
+            <button class="btn-card-register open-gaming-reg-btn" data-preset-game="LUDO">REGISTER NOW</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chess Card -->
+      <div class="game-card reveal-on-scroll delay-2" data-category="offline" data-game="CHESS">
+        <div class="game-card-img-wrap">
+          <img src="assets/images/games/chess_banner.jpg" alt="Speed Chess Masters">
+          <span class="game-card-badge" style="border-color:var(--color-green); color:var(--color-green-bright);">OFFLINE • SOLO</span>
+        </div>
+        <div class="game-card-body">
+          <h3 class="game-card-title">SPEED CHESS</h3>
+          <p class="game-card-desc">10-minute classical blitz & tactics tournament on physical chessboards.</p>
+          <div class="game-meta-row">
+            <div class="meta-item">
+              <span class="meta-label">PLAYERS</span>
+              <span class="meta-val">1 PLAYER</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">TOTAL FEE</span>
+              <span class="meta-val">₹50</span>
+            </div>
+          </div>
+          <div class="game-card-actions">
+            <button class="btn-card-details" data-game-id="CHESS">VIEW DETAILS</button>
+            <button class="btn-card-register open-gaming-reg-btn" data-preset-game="CHESS">REGISTER NOW</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Carrom Card -->
+      <div class="game-card reveal-on-scroll delay-3" data-category="offline" data-game="CARROM">
+        <div class="game-card-img-wrap">
+          <img src="assets/images/games/carrom_banner.jpg" alt="Carrom Strike Tournament">
+          <span class="game-card-badge" style="border-color:var(--color-green); color:var(--color-green-bright);">OFFLINE • SOLO</span>
+        </div>
+        <div class="game-card-body">
+          <h3 class="game-card-title">CARROM STRIKE</h3>
+          <p class="game-card-desc">Precision striker control, pocket calculation, and queen cover battles.</p>
+          <div class="game-meta-row">
+            <div class="meta-item">
+              <span class="meta-label">PLAYERS</span>
+              <span class="meta-val">1 PLAYER</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">TOTAL FEE</span>
+              <span class="meta-val">₹50</span>
+            </div>
+          </div>
+          <div class="game-card-actions">
+            <button class="btn-card-details" data-game-id="CARROM">VIEW DETAILS</button>
+            <button class="btn-card-register open-gaming-reg-btn" data-preset-game="CARROM">REGISTER NOW</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TOURNAMENT BATTLE PLAN SECTION -->
+  <section id="tournament" style="padding: 80px 24px; background: transparent;">
+    <div style="max-width: 1100px; margin: 0 auto;">
+      <div class="section-header-centered reveal-on-scroll">
+        <span class="pixel-tag" style="color:var(--color-purple-bright);">THE BATTLE PLAN</span>
+        <h2 class="gaming-main-title" style="font-size: 2.6rem;">EVENT DETAILS & VENUE</h2>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;">
+        <div class="reveal-on-scroll delay-1" style="padding: 24px; background: rgba(18, 18, 30, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1.5px solid rgba(255, 255, 255, 0.14); border-radius: 10px;">
+          <h4 style="color:var(--color-amber); font-family:'Space Grotesk', sans-serif; font-size:1.2rem; margin-bottom:12px;">📅 DATES & TIMINGS</h4>
+          <p style="color:var(--text-muted); line-height:1.6;"><strong>26–27 October 2026</strong><br>Starting 10:00 AM onwards both days.</p>
+        </div>
+
+        <div class="reveal-on-scroll delay-2" style="padding: 24px; background: rgba(18, 18, 30, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1.5px solid rgba(255, 255, 255, 0.14); border-radius: 10px;">
+          <h4 style="color:var(--color-amber); font-family:'Space Grotesk', sans-serif; font-size:1.2rem; margin-bottom:12px;">📍 VENUE</h4>
+          <p style="color:var(--text-muted); line-height:1.6;"><strong>Desh Bhagat University</strong><br>Campus Gaming Arena & Seminar Complex.</p>
+        </div>
+
+        <div class="reveal-on-scroll delay-3" style="padding: 24px; background: rgba(18, 18, 30, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1.5px solid rgba(255, 255, 255, 0.14); border-radius: 10px;">
+          <h4 style="color:var(--color-amber); font-family:'Space Grotesk', sans-serif; font-size:1.2rem; margin-bottom:12px;">🎓 ORGANIZERS</h4>
+          <p style="color:var(--text-muted); line-height:1.6;">Organized By <strong>Faculty of Engineering, Technology and Computing</strong>.</p>
+        </div>
+
+        <div class="reveal-on-scroll delay-4" style="padding: 24px; background: rgba(18, 18, 30, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1.5px solid rgba(255, 255, 255, 0.14); border-radius: 10px;">
+          <h4 style="color:var(--color-amber); font-family:'Space Grotesk', sans-serif; font-size:1.2rem; margin-bottom:12px;">💳 REGISTRATION FEE</h4>
+          <p style="color:var(--text-muted); line-height:1.6;"><strong>₹50 PER PERSON</strong><br>Auto-calculated based on squad or solo count.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ SECTION -->
+  <section id="faq" style="padding: 80px 24px; max-width: 900px; margin: 0 auto; background: transparent;">
+    <div class="section-header-centered reveal-on-scroll">
+      <span class="pixel-tag" style="color:var(--color-green-bright);">VILLAGER HELPDESK</span>
+      <h2 class="gaming-main-title" style="font-size: 2.6rem;">FREQUENTLY ASKED QUESTIONS</h2>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <details class="reveal-on-scroll delay-1" style="padding: 18px 24px; background: rgba(18, 18, 30, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1.5px solid rgba(255, 255, 255, 0.14); border-radius: 8px; cursor: pointer;">
+        <summary style="font-family:'Space Grotesk', sans-serif; font-weight:700; color:var(--text-white); font-size:1.1rem;">What is the registration fee?</summary>
+        <p style="color:var(--text-muted); margin-top:12px; line-height:1.6;">The registration fee is strictly <strong>₹50 per person</strong>. For a 4-player squad (BGMI / Free Fire), total is ₹200. For 5-player Mobile Legends, total is ₹250. For Solo games (Ludo, Chess, Carrom), total is ₹50.</p>
+      </details>
+
+      <details class="reveal-on-scroll delay-2" style="padding: 18px 24px; background: rgba(18, 18, 30, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1.5px solid rgba(255, 255, 255, 0.14); border-radius: 8px; cursor: pointer;">
+        <summary style="font-family:'Space Grotesk', sans-serif; font-weight:700; color:var(--text-white); font-size:1.1rem;">How does squad vs solo registration work?</summary>
+        <p style="color:var(--text-muted); margin-top:12px; line-height:1.6;">When you click "REGISTER NOW", selecting an Online Game automatically loads the Squad registration form (collecting Team Name, Captain, and Player details). Selecting an Offline Game automatically loads the Solo participant form.</p>
+      </details>
+
+      <details class="reveal-on-scroll delay-3" style="padding: 18px 24px; background: rgba(18, 18, 30, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1.5px solid rgba(255, 255, 255, 0.14); border-radius: 8px; cursor: pointer;">
+        <summary style="font-family:'Space Grotesk', sans-serif; font-weight:700; color:var(--text-white); font-size:1.1rem;">Can I register for multiple games?</summary>
+        <p style="color:var(--text-muted); margin-top:12px; line-height:1.6;">Yes! You can complete separate registrations for different games provided there are no schedule conflicts during the tournament days.</p>
+      </details>
+
+      <details class="reveal-on-scroll delay-4" style="padding: 18px 24px; background: rgba(18, 18, 30, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1.5px solid rgba(255, 255, 255, 0.14); border-radius: 8px; cursor: pointer;">
+        <summary style="font-family:'Space Grotesk', sans-serif; font-weight:700; color:var(--text-white); font-size:1.1rem;">How is payment verified?</summary>
+        <p style="color:var(--text-muted); margin-top:12px; line-height:1.6;">Payment is processed through our server-side verified gateway (Razorpay / Sandbox UPI). Once completed, the SQLite database stores your confirmed status and generates your unique Registration ID and official downloadable receipt.</p>
+      </details>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="padding: 60px 24px; background: rgba(8, 8, 13, 0.78); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-top: 1.5px solid rgba(255, 255, 255, 0.14); text-align: center;">
+    <div style="max-width: 1000px; margin: 0 auto;">
+      <h3 style="font-family:'Space Grotesk', sans-serif; font-size: 1.8rem; color:var(--text-white); margin-bottom: 12px;">CRAFTCON '26 GAMING ARENA</h3>
+      <p style="color:var(--text-muted); margin-bottom: 24px;">Desh Bhagat University • Faculty of Engineering, Technology and Computing</p>
+      <p style="font-size: 0.88rem; color: var(--text-dim); margin-bottom: 30px;">
+        Student Lead Head: <strong>Rounak Kumar</strong> | Tech Lead: <strong>Aryan Singh Tariani</strong> (+91 9475002048)
+      </p>
+
+      <button class="btn-gaming-primary open-gaming-reg-btn" style="margin-bottom: 30px;">
+        <span>REGISTER FOR GAMING ARENA NOW -></span>
+      </button>
+
+      <div style="font-size: 0.8rem; color: var(--text-dim); border-top: 1px solid var(--gaming-border); padding-top: 20px;">
+        © 2026 CRAFTCON Gaming Arena. All trademarks and game logos belong to their respective owners.
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==========================================================================
+       CENTRALIZED REGISTRATION WIZARD MODAL
+       ========================================================================== -->
+  <div class="gaming-modal-overlay" id="gaming-registration-modal">
+    <div class="gaming-modal-container">
+      
+      <!-- Wizard Header -->
+      <div class="wizard-header">
+        <div class="wizard-title-wrap">
+          <span style="font-size:1.4rem;">⚔️</span>
+          <div>
+            <h3 class="wizard-title" id="wizard-step-title">REGISTER FOR GAMING ARENA</h3>
+            <span style="font-size:0.75rem; color:var(--color-amber);" id="wizard-step-counter">STEP 1 OF 5</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="close-reg-modal-btn">&times;</button>
+      </div>
+
+      <!-- Progress Line -->
+      <div class="wizard-progress-bar-wrap">
+        <div class="wizard-progress-fill" id="wizard-progress-fill"></div>
+      </div>
+
+      <!-- Wizard Body / Steps -->
+      <div class="wizard-body">
+
+        <!-- STEP 1: CATEGORY SELECTION -->
+        <div class="wizard-step-pane active" id="step-pane-1">
+          <p class="step-subtitle">Select your tournament category to begin:</p>
+          <div class="category-select-grid">
+            <div class="category-option-card" data-cat="online">
+              <div class="cat-icon">⚔️</div>
+              <h4 class="cat-title">ONLINE GAMING</h4>
+              <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">BGMI • Free Fire • Mobile Legends</p>
+              <span class="cat-badge">SQUAD REGISTRATION</span>
+            </div>
+
+            <div class="category-option-card" data-cat="offline">
+              <div class="cat-icon">🏆</div>
+              <h4 class="cat-title">OFFLINE GAMING</h4>
+              <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">Ludo • Speed Chess • Carrom</p>
+              <span class="cat-badge" style="color:var(--color-amber); background:rgba(245,166,35,0.15);">SOLO REGISTRATION</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: GAME SELECTION -->
+        <div class="wizard-step-pane" id="step-pane-2">
+          <p class="step-subtitle">Select the game you wish to enter:</p>
+          <div class="game-select-grid" id="wizard-game-select-grid">
+            <!-- Tiles populated dynamically via JS -->
+          </div>
+        </div>
+
+        <!-- STEP 3: PARTICIPANT DETAILS -->
+        <div class="wizard-step-pane" id="step-pane-3">
+          <p class="step-subtitle" id="step-3-subtitle">Enter Team & Player information:</p>
+
+          <form id="wizard-details-form">
+            <div class="form-group-wrap" id="team-name-group">
+              <label class="form-label-custom">TEAM NAME *</label>
+              <input type="text" id="reg-team-name" class="input-field-custom" placeholder="e.g. Phoenix Squad">
+            </div>
+
+            <div class="form-group-wrap">
+              <label class="form-label-custom">COLLEGE / INSTITUTION *</label>
+              <input type="text" id="reg-college" class="input-field-custom" placeholder="e.g. Desh Bhagat University" required>
+            </div>
+
+            <!-- Captain / Main Contact -->
+            <div style="padding: 16px; background: var(--bg-deep); border-radius:8px; margin-bottom:20px; border:1px solid var(--gaming-border);">
+              <h5 style="color:var(--color-amber); font-family:'Space Grotesk', sans-serif; margin-bottom:12px;" id="captain-header-title">PLAYER 1 — CAPTAIN DETAILS</h5>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div>
+                  <label class="form-label-custom">FULL NAME *</label>
+                  <input type="text" id="captain-name" class="input-field-custom" required placeholder="Captain Name">
+                </div>
+                <div>
+                  <label class="form-label-custom">IN-GAME NAME / ID *</label>
+                  <input type="text" id="captain-ign" class="input-field-custom" required placeholder="e.g. Mortal_99">
+                </div>
+                <div>
+                  <label class="form-label-custom">EMAIL ADDRESS *</label>
+                  <input type="email" id="captain-email" class="input-field-custom" required placeholder="captain@email.com">
+                </div>
+                <div>
+                  <label class="form-label-custom">PHONE NUMBER *</label>
+                  <input type="tel" id="captain-phone" class="input-field-custom" required placeholder="+91 9876543210">
+                </div>
+              </div>
+            </div>
+
+            <!-- Additional Squad Players Container -->
+            <div id="additional-players-container">
+              <!-- Dynamic player forms injected here -->
+            </div>
+
+            <!-- Dynamic Price Calculation Box -->
+            <div class="price-summary-box">
+              <div>
+                <span class="price-breakdown-text" id="price-calc-breakdown">₹50 / person × 4 Players</span>
+                <div style="font-size:0.78rem; color:var(--text-dim);">Mandatory University Registration Rate</div>
+              </div>
+              <div class="price-total-val" id="price-calc-total">₹200</div>
+            </div>
+          </form>
+        </div>
+
+        <!-- STEP 4: REVIEW REGISTRATION SUMMARY -->
+        <div class="wizard-step-pane" id="step-pane-4">
+          <p class="step-subtitle">Review your registration details before proceeding to payment:</p>
+
+          <div style="padding: 20px; background: var(--bg-deep); border-radius:10px; border:1.5px solid var(--gaming-border); margin-bottom:20px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+              <div>
+                <span style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase;">EVENT</span>
+                <div style="color:var(--text-white); font-weight:700;">CRAFTCON 2K26 Gaming Arena</div>
+              </div>
+              <div>
+                <span style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase;">SELECTED GAME</span>
+                <div style="color:var(--color-amber-bright); font-weight:700;" id="review-game-name">BGMI</div>
+              </div>
+              <div>
+                <span style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase;">TEAM NAME</span>
+                <div style="color:var(--text-white);" id="review-team-name">Phoenix Squad</div>
+              </div>
+              <div>
+                <span style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase;">COLLEGE</span>
+                <div style="color:var(--text-white);" id="review-college">Desh Bhagat University</div>
+              </div>
+            </div>
+
+            <div style="border-top: 1px solid var(--gaming-border); padding-top:12px;">
+              <span style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase;">PARTICIPANTS</span>
+              <ul id="review-players-list" style="margin-top:8px; padding-left:20px; color:var(--text-muted); font-size:0.9rem;">
+                <!-- List injected dynamically -->
+              </ul>
+            </div>
+          </div>
+
+          <div class="price-summary-box">
+            <div>
+              <span class="price-breakdown-text">FINAL TOTAL AMOUNT</span>
+              <div style="font-size:0.78rem; color:var(--text-dim);">₹50 × <span id="review-player-count">4</span> Players</div>
+            </div>
+            <div class="price-total-val" id="review-total-amount">₹200</div>
+          </div>
+        </div>
+
+        <!-- STEP 5: PAYMENT PORTAL -->
+        <div class="wizard-step-pane" id="step-pane-5">
+          <div style="text-align:center; margin-bottom:20px;">
+            <h4 style="font-family:'Space Grotesk', sans-serif; font-size:1.5rem; color:var(--text-white);">ENTER THE PORTAL</h4>
+            <p style="color:var(--text-muted); font-size:0.9rem;">Complete your payment to secure your place in the arena.</p>
+          </div>
+
+          <div style="padding: 20px; background: var(--bg-deep); border-radius:10px; text-align:center; border:1px stroke var(--gaming-border); margin-bottom:20px;">
+            <div style="font-size:0.85rem; color:var(--text-muted); margin-bottom:6px;">PAYMENT SUMMARY</div>
+            <div style="font-family:'Silkscreen', monospace; font-size:2.2rem; color:var(--color-green-bright);" id="pay-amount-display">₹200</div>
+            <div style="font-size:0.8rem; color:var(--text-dim); margin-top:4px;" id="pay-reg-id-display">ORDER: CRAFT-26-XXXX</div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr; gap:12px;">
+            <button class="btn-gaming-primary" id="btn-trigger-razorpay" style="width:100%; justify-content:center;">
+              <span>💳 PAY NOW VIA UPI / CARD / NETBANKING</span>
+            </button>
+            <button class="btn-gaming-secondary" id="btn-trigger-sandbox-pay" style="width:100%; justify-content:center; border-color:var(--color-amber);">
+              <span>⚡ INSTANT SANDBOX PAY (DEMO & TEST)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- STEP 6: REGISTRATION SUCCESS -->
+        <div class="wizard-step-pane" id="step-pane-6">
+          <div style="text-align:center; margin-bottom:20px;">
+            <div style="font-size:3rem; margin-bottom:8px;">🏆</div>
+            <h3 style="font-family:'Space Grotesk', sans-serif; font-size:1.8rem; color:var(--color-green-bright);">YOU'RE IN THE GAME!</h3>
+            <p style="color:var(--text-muted);">Your registration and payment have been verified & recorded in SQLite.</p>
+          </div>
+
+          <div class="voucher-card" id="printable-voucher-card">
+            <div style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase;">OFFICIAL ARENA PASS</div>
+            <div class="voucher-reg-id" id="success-reg-id">CRAFT-26-BGMI-XXXX</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; text-align:left; margin-top:16px; font-size:0.9rem;">
+              <div><strong>Game:</strong> <span id="succ-game">BGMI</span></div>
+              <div><strong>Team:</strong> <span id="succ-team">Phoenix Squad</span></div>
+              <div><strong>College:</strong> <span id="succ-college">DBU</span></div>
+              <div><strong>Status:</strong> <span style="color:var(--color-green-bright);">VERIFIED & PAID</span></div>
+            </div>
+          </div>
+
+          <div style="display:flex; gap:12px;">
+            <button class="btn-gaming-secondary" id="btn-print-receipt" style="flex:1;">
+              <span>📄 DOWNLOAD RECEIPT</span>
+            </button>
+            <button class="btn-gaming-primary" id="btn-finish-reg" style="flex:1;">
+              <span>BACK TO ARENA</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Wizard Footer Controls -->
+      <div class="wizard-footer" id="wizard-footer-controls">
+        <button class="btn-wizard-back" id="btn-wizard-prev">← BACK</button>
+        <button class="btn-wizard-next" id="btn-wizard-next">NEXT STEP →</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- GAME DETAILS MODAL -->
+  <div class="gaming-modal-overlay" id="game-details-modal">
+    <div class="gaming-modal-container" style="max-width:540px;">
+      <div class="wizard-header">
+        <h3 class="wizard-title" id="details-modal-title">GAME DETAILS</h3>
+        <button class="modal-close-btn" id="close-details-modal-btn">&times;</button>
+      </div>
+      <div class="wizard-body">
+        <div style="width:100%; height:180px; border-radius:8px; overflow:hidden; margin-bottom:16px;">
+          <img id="details-modal-img" src="assets/images/games/bgmi_banner.jpg" alt="Game Banner" style="width:100%; height:100%; object-fit:cover;">
+        </div>
+        <p id="details-modal-desc" style="color:var(--text-muted); line-height:1.6; margin-bottom:20px;"></p>
+        <div style="padding:14px; background:var(--bg-deep); border-radius:8px; display:grid; grid-template-columns:1fr 1fr; gap:12px; font-size:0.9rem;">
+          <div><strong style="color:var(--text-dim);">TYPE:</strong> <span id="details-modal-type" style="color:var(--color-amber);">SQUAD</span></div>
+          <div><strong style="color:var(--text-dim);">PLAYERS:</strong> <span id="details-modal-players" style="color:var(--color-green-bright);">4</span></div>
+          <div><strong style="color:var(--text-dim);">FEE / PERSON:</strong> <span>₹50</span></div>
+          <div><strong style="color:var(--text-dim);">TOTAL FEE:</strong> <span id="details-modal-total" style="color:var(--color-green-bright);">₹200</span></div>
+        </div>
+      </div>
+      <div class="wizard-footer">
+        <div></div>
+        <button class="btn-gaming-primary open-gaming-reg-btn" id="details-modal-reg-btn" style="padding:10px 20px;">REGISTER NOW</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="gaming.js" defer></script>
+</body>
+</html>
