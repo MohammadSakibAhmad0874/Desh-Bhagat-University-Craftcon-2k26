@@ -4,10 +4,17 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
+  // Page Load Animation Sequence Trigger
+  setTimeout(() => {
+    document.body.classList.add('page-load-ready');
+  }, 60);
+
+  initScrollProgress();
   initGamingCategoryFilter();
   initGameDetailsModal();
   initCentralizedRegistrationWizard();
   initScrollRevealObserver();
+  initHeroParallax();
   initCardTiltPhysics();
   initThreeJSScene();
 });
@@ -264,7 +271,7 @@ function initCentralizedRegistrationWizard() {
     if (typeof playMinecraftSound === 'function') playMinecraftSound('click');
     if (wizardState.step > 1 && wizardState.step < 6) {
       wizardState.step--;
-      renderWizardStep();
+      renderWizardStep('prev');
     }
   });
 
@@ -285,7 +292,7 @@ function initCentralizedRegistrationWizard() {
   if (btnStep6Back) {
     btnStep6Back.addEventListener('click', () => {
       wizardState.step = 5;
-      renderWizardStep();
+      renderWizardStep('prev');
     });
   }
 
@@ -304,19 +311,32 @@ function initCentralizedRegistrationWizard() {
   }
 }
 
-/* Render Wizard Step UI */
-function renderWizardStep() {
+let activeWizardStepIndex = 1;
+
+/* Render Wizard Step UI with Directional Transitions */
+function renderWizardStep(direction = 'next') {
   const progressFill = document.getElementById('wizard-progress-fill');
   const stepTitleEl = document.getElementById('wizard-step-title');
   const stepCounterEl = document.getElementById('wizard-step-counter');
   const footerControls = document.getElementById('wizard-footer-controls');
 
-  // Update step panes visibility (7 panes in total)
+  const oldStep = activeWizardStepIndex;
+  const newStep = wizardState.step;
+  activeWizardStepIndex = newStep;
+
+  const isForward = direction === 'next' || newStep > oldStep;
+
+  // Update step panes visibility (7 panes in total) with smooth slide animation
   for (let i = 1; i <= 7; i++) {
     const pane = document.getElementById(`step-pane-${i}`);
     if (pane) {
-      if (i === wizardState.step) {
+      pane.classList.remove('slide-in-right', 'slide-in-left', 'slide-out-left', 'slide-out-right');
+
+      if (i === newStep) {
         pane.classList.add('active');
+        if (oldStep !== newStep) {
+          pane.classList.add(isForward ? 'slide-in-right' : 'slide-in-left');
+        }
       } else {
         pane.classList.remove('active');
       }
@@ -582,8 +602,67 @@ function populateStep5Review() {
   }
 }
 
+/* Top Scroll Progress Indicator */
+function initScrollProgress() {
+  const progressBar = document.getElementById('scroll-progress-bar');
+  if (!progressBar) return;
+
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
+        const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        const scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+        progressBar.style.width = scrolled.toFixed(1) + '%';
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+}
+
+/* Desktop Hero Subtle Parallax Depth */
+function initHeroParallax() {
+  const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.matchMedia('(pointer: coarse)').matches;
+  if (isTouch || window.innerWidth <= 768) return;
+
+  const heroContent = document.querySelector('.gaming-hero-content');
+  if (!heroContent) return;
+
+  let ticking = false;
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+        if (scrollY < window.innerHeight * 1.2) {
+          const translateY = Math.min(scrollY * 0.1, 25);
+          heroContent.style.transform = `translateY(${translateY}px)`;
+        }
+        ticking = false;
+      });
+      ticking = true;
+    }
+  }, { passive: true });
+}
+
 /* Razorpay Checkout Gateway Connection */
 async function executeRazorpayPayment() {
+  const pane6 = document.getElementById('step-pane-6');
+  let overlay = null;
+
+  if (pane6) {
+    overlay = document.createElement('div');
+    overlay.className = 'payment-loading-overlay';
+    overlay.innerHTML = `
+      <div class="payment-loading-spinner"></div>
+      <div style="font-family:'Space Grotesk', sans-serif; font-size:1.1rem; color:var(--text-white); font-weight:700;">PREPARING SECURE PAYMENT...</div>
+      <div style="font-size:0.8rem; color:var(--color-amber); margin-top:6px;">Connecting to Razorpay Order Gateway</div>
+    `;
+    pane6.style.position = 'relative';
+    pane6.appendChild(overlay);
+  }
+
   try {
     const orderRes = await fetch('/api/payments/create-order', {
       method: 'POST',
@@ -596,6 +675,8 @@ async function executeRazorpayPayment() {
       })
     });
     const orderData = await orderRes.json();
+
+    if (overlay) overlay.remove();
 
     if (!orderData.success) {
       alert(`Payment Initialization Error: ${orderData.error || 'Failed to create payment order.'}`);
@@ -658,6 +739,7 @@ async function executeRazorpayPayment() {
     const rzp = new Razorpay(options);
     rzp.open();
   } catch (err) {
+    if (overlay) overlay.remove();
     console.error('Razorpay Gateway error:', err);
     alert('Unable to initialize Razorpay payment gateway. Please check connection and try again.');
   }
@@ -677,13 +759,16 @@ function showRegistrationSuccess(data) {
   if (collegeEl) collegeEl.textContent = data.college || wizardState.college;
 
   wizardState.step = 7;
-  renderWizardStep();
+  renderWizardStep('next');
 }
 
 /* ==========================================================================
    4. SCROLL REVEAL OBSERVER & INTERACTIVE ANIMATIONS
    ========================================================================== */
 function initScrollRevealObserver() {
+  const sectionHeaders = document.querySelectorAll('.section-header-centered');
+  sectionHeaders.forEach(sh => sh.classList.add('pixel-mask-reveal'));
+
   const revealElements = document.querySelectorAll('.reveal-on-scroll');
   if (!revealElements.length) return;
 
@@ -704,6 +789,28 @@ function initScrollRevealObserver() {
   revealElements.forEach(el => {
     revealObserver.observe(el);
   });
+
+  // Scroll Spy for Navbar Active Link Indicator
+  const sections = document.querySelectorAll('section[id], footer');
+  const navLinks = document.querySelectorAll('.desktop-nav .nav-link');
+
+  const spyObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const id = entry.target.getAttribute('id');
+        navLinks.forEach(link => {
+          const href = link.getAttribute('href');
+          if (href === `#${id}` || (id === 'hero' && href === '#hero')) {
+            link.classList.add('active');
+          } else if (href && href.startsWith('#') && href !== `#${id}`) {
+            link.classList.remove('active');
+          }
+        });
+      }
+    });
+  }, { threshold: 0.3 });
+
+  sections.forEach(sec => spyObserver.observe(sec));
 }
 
 function initCardTiltPhysics() {

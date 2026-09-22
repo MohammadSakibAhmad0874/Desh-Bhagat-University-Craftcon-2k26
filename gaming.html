@@ -35,6 +35,9 @@
 </head>
 <body class="smooth-scroll-body">
 
+  <!-- SCROLL PROGRESS INDICATOR -->
+  <div id="scroll-progress-bar" class="scroll-progress-bar" aria-hidden="true"></div>
+
   <!-- GLOBAL CONTINUOUS FULL-PAGE MINECRAFT BACKGROUND LAYER -->
   <div class="global-page-bg" aria-hidden="true">
     <img src="assets/images/full_minecraft_background.jpg" alt="CRAFTCON 2K26 Minecraft World" class="bg-tall-img">
@@ -299,8 +302,9 @@
     </div>
   </section>
 
-  <!-- TOURNAMENT BATTLE PLAN SECTION -->
-  <section id="tournament" style="padding: 80px 24px; background: transparent;">
+  <!-- TOURNAMENT BATTLE PLAN & RULES SECTION -->
+  <section id="tournament" class="gaming-section-target" style="padding: 80px 24px; background: transparent;">
+    <div id="rules" style="position:relative; top:-80px;"></div>
     <div style="max-width: 1100px; margin: 0 auto;">
       <div class="section-header-centered reveal-on-scroll">
         <span class="pixel-tag" style="color:var(--color-purple-bright);">THE BATTLE PLAN</span>
