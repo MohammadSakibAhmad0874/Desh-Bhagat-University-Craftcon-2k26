@@ -168,6 +168,7 @@ let wizardState = {
   playerCount: 4,
   feePerPerson: 50,
   totalAmount: 200,
+  whatsappJoined: false,
   registrationId: null,
   orderId: null,
   paymentId: null
@@ -180,9 +181,6 @@ function initCentralizedRegistrationWizard() {
 
   const prevBtn = document.getElementById('btn-wizard-prev');
   const nextBtn = document.getElementById('btn-wizard-next');
-  const progressFill = document.getElementById('wizard-progress-fill');
-  const stepTitleEl = document.getElementById('wizard-step-title');
-  const stepCounterEl = document.getElementById('wizard-step-counter');
 
   // Launch modal with optional preset game
   openBtns.forEach(btn => {
@@ -236,6 +234,26 @@ function initCentralizedRegistrationWizard() {
     });
   });
 
+  // Step 4: WhatsApp Group Handlers
+  const btnJoinWhatsapp = document.getElementById('btn-join-whatsapp');
+  const btnConfirmWhatsapp = document.getElementById('btn-confirm-whatsapp');
+
+  if (btnJoinWhatsapp && btnConfirmWhatsapp) {
+    btnJoinWhatsapp.addEventListener('click', () => {
+      if (typeof playMinecraftSound === 'function') playMinecraftSound('click');
+      btnConfirmWhatsapp.disabled = false;
+      btnConfirmWhatsapp.style.opacity = '1';
+      btnConfirmWhatsapp.style.cursor = 'pointer';
+    });
+
+    btnConfirmWhatsapp.addEventListener('click', () => {
+      if (typeof playMinecraftSound === 'function') playMinecraftSound('pop');
+      wizardState.whatsappJoined = true;
+      wizardState.step = 5;
+      renderWizardStep();
+    });
+  }
+
   // Navigation Buttons
   prevBtn.addEventListener('click', () => {
     if (typeof playMinecraftSound === 'function') playMinecraftSound('click');
@@ -250,7 +268,7 @@ function initCentralizedRegistrationWizard() {
     validateAndAdvanceStep();
   });
 
-  // Payment Step Navigation & Action
+  // Step 6 Payment Action
   const btnRazorpay = document.getElementById('btn-trigger-razorpay');
   if (btnRazorpay) {
     btnRazorpay.addEventListener('click', () => {
@@ -258,21 +276,27 @@ function initCentralizedRegistrationWizard() {
     });
   }
 
-  const btnStep5Back = document.getElementById('btn-step5-back');
-  if (btnStep5Back) {
-    btnStep5Back.addEventListener('click', () => {
-      wizardState.step = 4;
+  const btnStep6Back = document.getElementById('btn-step6-back') || document.getElementById('btn-step5-back');
+  if (btnStep6Back) {
+    btnStep6Back.addEventListener('click', () => {
+      wizardState.step = 5;
       renderWizardStep();
     });
   }
 
-  document.getElementById('btn-finish-reg').addEventListener('click', () => {
-    modal.classList.remove('active');
-  });
+  const btnFinish = document.getElementById('btn-finish-reg');
+  if (btnFinish) {
+    btnFinish.addEventListener('click', () => {
+      modal.classList.remove('active');
+    });
+  }
 
-  document.getElementById('btn-print-receipt').addEventListener('click', () => {
-    window.print();
-  });
+  const btnPrint = document.getElementById('btn-print-receipt');
+  if (btnPrint) {
+    btnPrint.addEventListener('click', () => {
+      window.print();
+    });
+  }
 }
 
 /* Render Wizard Step UI */
@@ -282,8 +306,8 @@ function renderWizardStep() {
   const stepCounterEl = document.getElementById('wizard-step-counter');
   const footerControls = document.getElementById('wizard-footer-controls');
 
-  // Update step panes visibility
-  for (let i = 1; i <= 6; i++) {
+  // Update step panes visibility (7 panes in total)
+  for (let i = 1; i <= 7; i++) {
     const pane = document.getElementById(`step-pane-${i}`);
     if (pane) {
       if (i === wizardState.step) {
@@ -295,14 +319,19 @@ function renderWizardStep() {
   }
 
   // Update Progress Fill %
-  const pct = Math.min((wizardState.step / 5) * 100, 100);
-  progressFill.style.width = `${pct}%`;
+  const pct = Math.min((wizardState.step / 6) * 100, 100);
+  if (progressFill) progressFill.style.width = `${pct}%`;
 
-  stepCounterEl.textContent = `STEP ${wizardState.step} OF 5`;
+  if (stepCounterEl) {
+    if (wizardState.step <= 6) {
+      stepCounterEl.textContent = `STEP ${wizardState.step} OF 6`;
+    } else {
+      stepCounterEl.textContent = `COMPLETED`;
+    }
+  }
 
   if (wizardState.step === 1) {
     stepTitleEl.textContent = 'CHOOSE CATEGORY';
-    // Highlight category card
     const cards = document.querySelectorAll('.category-option-card');
     cards.forEach(c => {
       if (c.getAttribute('data-cat') === wizardState.category) c.classList.add('selected');
@@ -315,17 +344,29 @@ function renderWizardStep() {
     stepTitleEl.textContent = 'ENTER DETAILS';
     populateStep3Form();
   } else if (wizardState.step === 4) {
-    stepTitleEl.textContent = 'REVIEW SUMMARY';
-    populateStep4Review();
+    stepTitleEl.textContent = 'JOIN WHATSAPP GROUP';
+    const btnConfirm = document.getElementById('btn-confirm-whatsapp');
+    if (btnConfirm && !wizardState.whatsappJoined) {
+      btnConfirm.disabled = true;
+      btnConfirm.style.opacity = '0.6';
+      btnConfirm.style.cursor = 'not-allowed';
+    }
   } else if (wizardState.step === 5) {
-    stepTitleEl.textContent = 'PAYMENT PORTAL';
-    footerControls.style.display = 'none'; // hide next/prev during payment
+    stepTitleEl.textContent = 'REVIEW SUMMARY';
+    populateStep5Review();
   } else if (wizardState.step === 6) {
+    stepTitleEl.textContent = 'PAYMENT PORTAL';
+    if (footerControls) footerControls.style.display = 'none';
+    const payAmountEl = document.getElementById('pay-amount-display');
+    const payRegIdEl = document.getElementById('pay-reg-id-display');
+    if (payAmountEl) payAmountEl.textContent = `₹${wizardState.totalAmount}`;
+    if (payRegIdEl) payRegIdEl.textContent = `GAME: ${wizardState.gameId} • SQUAD OF ${wizardState.playerCount}`;
+  } else if (wizardState.step === 7) {
     stepTitleEl.textContent = 'REGISTRATION SUCCESS';
-    footerControls.style.display = 'none';
+    if (footerControls) footerControls.style.display = 'none';
   }
 
-  if (wizardState.step < 5) {
+  if (wizardState.step <= 5 && footerControls) {
     footerControls.style.display = 'flex';
   }
 }
@@ -333,6 +374,7 @@ function renderWizardStep() {
 /* Step 2: Populate Game Selection Grid based on Category */
 function populateStep2GameGrid() {
   const grid = document.getElementById('wizard-game-select-grid');
+  if (!grid) return;
   grid.innerHTML = '';
 
   Object.values(GAMES_CATALOGUE).forEach(config => {
@@ -371,45 +413,47 @@ function populateStep3Form() {
   const calcBreakdown = document.getElementById('price-calc-breakdown');
   const calcTotal = document.getElementById('price-calc-total');
 
-  calcBreakdown.textContent = `₹50 / person × ${wizardState.playerCount} Players`;
-  calcTotal.textContent = `₹${wizardState.totalAmount}`;
+  if (calcBreakdown) calcBreakdown.textContent = `₹50 / person × ${wizardState.playerCount} Players`;
+  if (calcTotal) calcTotal.textContent = `₹${wizardState.totalAmount}`;
 
   if (config.type === 'squad') {
-    teamGroup.style.display = 'block';
-    captainTitle.textContent = 'PLAYER 1 — CAPTAIN DETAILS';
+    if (teamGroup) teamGroup.style.display = 'block';
+    if (captainTitle) captainTitle.textContent = 'PLAYER 1 — CAPTAIN DETAILS';
   } else {
-    teamGroup.style.display = 'none';
-    captainTitle.textContent = 'PARTICIPANT DETAILS';
+    if (teamGroup) teamGroup.style.display = 'none';
+    if (captainTitle) captainTitle.textContent = 'PARTICIPANT DETAILS';
   }
 
   // Render Additional Player Input Forms for Squads
-  addPlayersContainer.innerHTML = '';
-  if (config.type === 'squad' && config.minPlayers > 1) {
-    for (let i = 2; i <= config.minPlayers; i++) {
-      const pBox = document.createElement('div');
-      pBox.style.cssText = 'padding:16px; background:var(--bg-deep); border-radius:8px; margin-bottom:16px; border:1px solid var(--gaming-border);';
-      pBox.innerHTML = `
-        <h5 style="color:var(--text-white); font-family:'Space Grotesk', sans-serif; margin-bottom:12px;">PLAYER ${i} DETAILS</h5>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
-          <div>
-            <label class="form-label-custom">FULL NAME *</label>
-            <input type="text" id="player-${i}-name" class="input-field-custom" required placeholder="Player ${i} Name">
+  if (addPlayersContainer) {
+    addPlayersContainer.innerHTML = '';
+    if (config.type === 'squad' && config.minPlayers > 1) {
+      for (let i = 2; i <= config.minPlayers; i++) {
+        const pBox = document.createElement('div');
+        pBox.style.cssText = 'padding:16px; background:var(--bg-deep); border-radius:8px; margin-bottom:16px; border:1px solid var(--gaming-border);';
+        pBox.innerHTML = `
+          <h5 style="color:var(--text-white); font-family:'Space Grotesk', sans-serif; margin-bottom:12px;">PLAYER ${i} DETAILS</h5>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div>
+              <label class="form-label-custom">FULL NAME *</label>
+              <input type="text" id="player-${i}-name" class="input-field-custom" required placeholder="Player ${i} Name">
+            </div>
+            <div>
+              <label class="form-label-custom">IN-GAME NAME / ID *</label>
+              <input type="text" id="player-${i}-ign" class="input-field-custom" required placeholder="In-Game ID">
+            </div>
+            <div>
+              <label class="form-label-custom">GAME UID / ID</label>
+              <input type="text" id="player-${i}-uid" class="input-field-custom" placeholder="Numeric UID">
+            </div>
+            <div>
+              <label class="form-label-custom">PHONE NUMBER</label>
+              <input type="tel" id="player-${i}-phone" class="input-field-custom" placeholder="Phone Number">
+            </div>
           </div>
-          <div>
-            <label class="form-label-custom">IN-GAME NAME / ID *</label>
-            <input type="text" id="player-${i}-ign" class="input-field-custom" required placeholder="In-Game ID">
-          </div>
-          <div>
-            <label class="form-label-custom">GAME UID / ID</label>
-            <input type="text" id="player-${i}-uid" class="input-field-custom" placeholder="Numeric UID">
-          </div>
-          <div>
-            <label class="form-label-custom">PHONE NUMBER</label>
-            <input type="tel" id="player-${i}-phone" class="input-field-custom" placeholder="Phone Number">
-          </div>
-        </div>
-      `;
-      addPlayersContainer.appendChild(pBox);
+        `;
+        addPlayersContainer.appendChild(pBox);
+      }
     }
   }
 }
@@ -425,15 +469,16 @@ function validateAndAdvanceStep() {
   } else if (wizardState.step === 3) {
     // Validate inputs
     const config = GAMES_CATALOGUE[wizardState.gameId];
-    const college = document.getElementById('reg-college').value.trim();
-    const capName = document.getElementById('captain-name').value.trim();
-    const capIgn = document.getElementById('captain-ign').value.trim();
-    const capEmail = document.getElementById('captain-email').value.trim();
-    const capPhone = document.getElementById('captain-phone').value.trim();
+    const college = document.getElementById('reg-college') ? document.getElementById('reg-college').value.trim() : '';
+    const capName = document.getElementById('captain-name') ? document.getElementById('captain-name').value.trim() : '';
+    const capIgn = document.getElementById('captain-ign') ? document.getElementById('captain-ign').value.trim() : '';
+    const capEmail = document.getElementById('captain-email') ? document.getElementById('captain-email').value.trim() : '';
+    const capPhone = document.getElementById('captain-phone') ? document.getElementById('captain-phone').value.trim() : '';
 
     let teamName = '';
     if (config.type === 'squad') {
-      teamName = document.getElementById('reg-team-name').value.trim();
+      const teamInput = document.getElementById('reg-team-name');
+      teamName = teamInput ? teamInput.value.trim() : '';
       if (!teamName) {
         alert('Please enter a Team Name for your squad.');
         return;
@@ -459,10 +504,15 @@ function validateAndAdvanceStep() {
 
     if (config.type === 'squad' && config.minPlayers > 1) {
       for (let i = 2; i <= config.minPlayers; i++) {
-        const pName = document.getElementById(`player-${i}-name`).value.trim();
-        const pIgn = document.getElementById(`player-${i}-ign`).value.trim();
-        const pUid = document.getElementById(`player-${i}-uid`).value.trim();
-        const pPhone = document.getElementById(`player-${i}-phone`).value.trim();
+        const pNameEl = document.getElementById(`player-${i}-name`);
+        const pIgnEl = document.getElementById(`player-${i}-ign`);
+        const pUidEl = document.getElementById(`player-${i}-uid`);
+        const pPhoneEl = document.getElementById(`player-${i}-phone`);
+
+        const pName = pNameEl ? pNameEl.value.trim() : '';
+        const pIgn = pIgnEl ? pIgnEl.value.trim() : '';
+        const pUid = pUidEl ? pUidEl.value.trim() : '';
+        const pPhone = pPhoneEl ? pPhoneEl.value.trim() : '';
 
         if (!pName || !pIgn) {
           alert(`Please enter Player ${i}'s Name and In-Game ID.`);
@@ -481,68 +531,44 @@ function validateAndAdvanceStep() {
     wizardState.step = 4;
     renderWizardStep();
   } else if (wizardState.step === 4) {
-    // Submit Registration to Server & Create Payment Order
-    submitRegistrationOrder();
+    if (!wizardState.whatsappJoined) {
+      alert('Please join the WhatsApp group and click "I HAVE JOINED THE GROUP" to proceed.');
+      return;
+    }
+    wizardState.step = 5;
+    renderWizardStep();
+  } else if (wizardState.step === 5) {
+    // Step 5 is Review & Summary. Next button advances to Step 6 (Payment Portal) WITHOUT writing to DB yet.
+    wizardState.step = 6;
+    renderWizardStep();
   }
 }
 
-/* Step 4: Populate Review Screen */
-function populateStep4Review() {
+/* Step 5: Populate Review Screen */
+function populateStep5Review() {
   const config = GAMES_CATALOGUE[wizardState.gameId];
-  document.getElementById('review-game-name').textContent = config.name;
-  document.getElementById('review-team-name').textContent = config.type === 'squad' ? wizardState.teamName : `Solo (${wizardState.captain.name})`;
-  document.getElementById('review-college').textContent = wizardState.college;
-  document.getElementById('review-player-count').textContent = wizardState.playerCount;
-  document.getElementById('review-total-amount').textContent = `₹${wizardState.totalAmount}`;
-
+  const gameNameEl = document.getElementById('review-game-name');
+  const teamNameEl = document.getElementById('review-team-name');
+  const collegeEl = document.getElementById('review-college');
+  const countEl = document.getElementById('review-player-count');
+  const totalEl = document.getElementById('review-total-amount');
+  const whatsappEl = document.getElementById('review-whatsapp-status');
   const listEl = document.getElementById('review-players-list');
-  listEl.innerHTML = '';
-  wizardState.players.forEach((p, idx) => {
-    const li = document.createElement('li');
-    li.textContent = `${idx === 0 ? 'Captain' : 'Player ' + (idx + 1)}: ${p.name} (${p.inGameName || 'No IGN'})`;
-    listEl.appendChild(li);
-  });
-}
 
-/* Submit Registration to Backend */
-async function submitRegistrationOrder() {
-  try {
-    const payload = {
-      gameId: wizardState.gameId,
-      teamName: wizardState.teamName,
-      college: wizardState.college,
-      captain: wizardState.captain,
-      players: wizardState.players
-    };
+  if (gameNameEl) gameNameEl.textContent = config ? config.name : wizardState.gameId;
+  if (teamNameEl) teamNameEl.textContent = (config && config.type === 'squad') ? wizardState.teamName : `Solo (${wizardState.captain.name})`;
+  if (collegeEl) collegeEl.textContent = wizardState.college;
+  if (countEl) countEl.textContent = wizardState.playerCount;
+  if (totalEl) totalEl.textContent = `₹${wizardState.totalAmount}`;
+  if (whatsappEl) whatsappEl.textContent = wizardState.whatsappJoined ? '✓ Joined / Confirmed' : 'Not Joined';
 
-    const res = await fetch('/api/registrations/create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+  if (listEl) {
+    listEl.innerHTML = '';
+    wizardState.players.forEach((p, idx) => {
+      const li = document.createElement('li');
+      li.textContent = `${idx === 0 ? 'Captain' : 'Player ' + (idx + 1)}: ${p.name} (${p.inGameName || 'No IGN'})`;
+      listEl.appendChild(li);
     });
-
-    const data = await res.json();
-    if (data.success) {
-      wizardState.registrationId = data.registrationId;
-      wizardState.orderId = data.orderId;
-
-      document.getElementById('pay-amount-display').textContent = `₹${wizardState.totalAmount}`;
-      document.getElementById('pay-reg-id-display').textContent = `ORDER: ${data.registrationId}`;
-
-      wizardState.step = 5;
-      renderWizardStep();
-    } else {
-      alert(`Registration Error: ${data.error || 'Failed to initialize order.'}`);
-    }
-  } catch (err) {
-    console.warn('Backend API offline, proceeding with client-side order simulation:', err);
-    // Fallback order ID for offline demo mode
-    wizardState.registrationId = `CRAFT-26-${wizardState.gameId}-${Math.floor(1000 + Math.random() * 9000)}`;
-    wizardState.orderId = `ORDER_${Date.now()}`;
-    document.getElementById('pay-amount-display').textContent = `₹${wizardState.totalAmount}`;
-    document.getElementById('pay-reg-id-display').textContent = `ORDER: ${wizardState.registrationId}`;
-    wizardState.step = 5;
-    renderWizardStep();
   }
 }
 
@@ -552,7 +578,12 @@ async function executeRazorpayPayment() {
     const orderRes = await fetch('/api/payments/create-order', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ registrationId: wizardState.registrationId })
+      body: JSON.stringify({
+        gameId: wizardState.gameId,
+        playerCount: wizardState.playerCount,
+        teamName: wizardState.teamName,
+        captain: wizardState.captain
+      })
     });
     const orderData = await orderRes.json();
 
@@ -584,10 +615,10 @@ async function executeRazorpayPayment() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              registrationId: wizardState.registrationId,
               orderId: response.razorpay_order_id || orderId,
               paymentId: response.razorpay_payment_id,
-              signature: response.razorpay_signature
+              signature: response.razorpay_signature,
+              registrationData: wizardState
             })
           });
           const verifyData = await verifyRes.json();
@@ -597,6 +628,7 @@ async function executeRazorpayPayment() {
             alert(`Payment verification failed: ${verifyData.error || 'Invalid signature'}`);
           }
         } catch (e) {
+          console.error('Payment verification error:', e);
           alert('Payment verification network error. Please contact tournament support.');
         }
       },
@@ -624,12 +656,17 @@ async function executeRazorpayPayment() {
 /* Render Final Success Screen */
 function showRegistrationSuccess(data) {
   if (typeof playMinecraftSound === 'function') playMinecraftSound('pop');
-  document.getElementById('success-reg-id').textContent = data.registrationId || wizardState.registrationId;
-  document.getElementById('succ-game').textContent = data.game || GAMES_CATALOGUE[wizardState.gameId].name;
-  document.getElementById('succ-team').textContent = data.teamName || wizardState.teamName || `Solo (${wizardState.captain.name})`;
-  document.getElementById('succ-college').textContent = data.college || wizardState.college;
+  const regIdEl = document.getElementById('success-reg-id');
+  const gameEl = document.getElementById('succ-game');
+  const teamEl = document.getElementById('succ-team');
+  const collegeEl = document.getElementById('succ-college');
 
-  wizardState.step = 6;
+  if (regIdEl) regIdEl.textContent = data.registrationId || wizardState.registrationId || 'CRAFT-26-PAID';
+  if (gameEl) gameEl.textContent = data.game || (GAMES_CATALOGUE[wizardState.gameId] ? GAMES_CATALOGUE[wizardState.gameId].name : wizardState.gameId);
+  if (teamEl) teamEl.textContent = data.teamName || wizardState.teamName || `Solo (${wizardState.captain.name})`;
+  if (collegeEl) collegeEl.textContent = data.college || wizardState.college;
+
+  wizardState.step = 7;
   renderWizardStep();
 }
 

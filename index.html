@@ -412,7 +412,7 @@
           <span style="font-size:1.4rem;">⚔️</span>
           <div>
             <h3 class="wizard-title" id="wizard-step-title">REGISTER FOR GAMING ARENA</h3>
-            <span style="font-size:0.75rem; color:var(--color-amber);" id="wizard-step-counter">STEP 1 OF 5</span>
+            <span style="font-size:0.75rem; color:var(--color-amber);" id="wizard-step-counter">STEP 1 OF 6</span>
           </div>
         </div>
         <button class="modal-close-btn" id="close-reg-modal-btn">&times;</button>
@@ -508,8 +508,38 @@
           </form>
         </div>
 
-        <!-- STEP 4: REVIEW REGISTRATION SUMMARY -->
+        <!-- STEP 4: JOIN WHATSAPP GROUP -->
         <div class="wizard-step-pane" id="step-pane-4">
+          <div style="text-align:center; margin-bottom:16px;">
+            <h4 style="font-family:'Space Grotesk', sans-serif; font-size:1.4rem; color:var(--text-white); margin-bottom:6px;">JOIN THE WHATSAPP GROUP</h4>
+            <p style="color:var(--text-muted); font-size:0.88rem;">Stay connected with the CRAFTCON 2K26 community.</p>
+          </div>
+
+          <div style="padding: 20px; background: var(--bg-deep); border-radius:10px; border:1.5px solid var(--gaming-border); margin-bottom:20px;">
+            <p style="color:var(--text-white); font-weight:600; font-size:0.9rem; margin-bottom:10px;">
+              Join the official WhatsApp group to receive:
+            </p>
+            <ul style="color:var(--text-muted); font-size:0.88rem; line-height:1.8; padding-left:18px; margin-bottom:20px;">
+              <li>• Event announcements & tournament brackets</li>
+              <li>• Important updates & schedule changes</li>
+              <li>• Competition information & venue instructions</li>
+              <li>• Last-minute notifications & organizer support</li>
+            </ul>
+
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <a href="https://chat.whatsapp.com/CRAFTCON2026GamingArena" target="_blank" rel="noopener noreferrer" class="btn-gaming-secondary" id="btn-join-whatsapp" style="width:100%; justify-content:center; border-color:#25D366; color:#25D366; text-decoration:none; padding:12px 18px; font-weight:700;">
+                <span>💬 JOIN WHATSAPP GROUP</span>
+              </a>
+
+              <button type="button" class="btn-gaming-primary" id="btn-confirm-whatsapp" style="width:100%; justify-content:center; background:var(--color-green); border-color:var(--mc-xp-green); opacity:0.6; cursor:not-allowed;" disabled>
+                <span>✓ I HAVE JOINED THE GROUP</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 5: REVIEW REGISTRATION SUMMARY -->
+        <div class="wizard-step-pane" id="step-pane-5">
           <p class="step-subtitle">Review your registration details before proceeding to payment:</p>
 
           <div style="padding: 20px; background: var(--bg-deep); border-radius:10px; border:1.5px solid var(--gaming-border); margin-bottom:20px;">
@@ -530,6 +560,10 @@
                 <span style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase;">COLLEGE</span>
                 <div style="color:var(--text-white);" id="review-college">Desh Bhagat University</div>
               </div>
+              <div>
+                <span style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase;">WHATSAPP GROUP</span>
+                <div style="color:#25D366; font-weight:600;" id="review-whatsapp-status">✓ Joined / Confirmed</div>
+              </div>
             </div>
 
             <div style="border-top: 1px solid var(--gaming-border); padding-top:12px;">
@@ -549,8 +583,8 @@
           </div>
         </div>
 
-        <!-- STEP 5: PAYMENT PORTAL -->
-        <div class="wizard-step-pane" id="step-pane-5">
+        <!-- STEP 6: PAYMENT PORTAL -->
+        <div class="wizard-step-pane" id="step-pane-6">
           <div style="text-align:center; margin-bottom:20px;">
             <h4 style="font-family:'Space Grotesk', sans-serif; font-size:1.5rem; color:var(--text-white);">ENTER THE PORTAL</h4>
             <p style="color:var(--text-muted); font-size:0.9rem;">Complete your payment to secure your place in the arena.</p>
@@ -566,14 +600,14 @@
             <button class="btn-gaming-primary" id="btn-trigger-razorpay" style="width:100%; justify-content:center;">
               <span>💳 PAY VIA RAZORPAY</span>
             </button>
-            <button class="btn-wizard-back" id="btn-step5-back" style="width:100%; justify-content:center;">
+            <button class="btn-wizard-back" id="btn-step6-back" style="width:100%; justify-content:center;">
               <span>← BACK</span>
             </button>
           </div>
         </div>
 
-        <!-- STEP 6: REGISTRATION SUCCESS -->
-        <div class="wizard-step-pane" id="step-pane-6">
+        <!-- STEP 7: REGISTRATION SUCCESS -->
+        <div class="wizard-step-pane" id="step-pane-7">
           <div style="text-align:center; margin-bottom:20px;">
             <div style="font-size:3rem; margin-bottom:8px;">🏆</div>
             <h3 style="font-family:'Space Grotesk', sans-serif; font-size:1.8rem; color:var(--color-green-bright);">YOU'RE IN THE GAME!</h3>

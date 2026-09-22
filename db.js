@@ -131,6 +131,14 @@ async function initDb() {
       await ensureColumnExists('payments', 'signature', 'TEXT');
       await ensureColumnExists('payments', 'updated_at', 'DATETIME');
 
+      // Create Idempotency Unique Indexes
+      try {
+        await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_reg_rzp_pay ON registrations(razorpay_payment_id) WHERE razorpay_payment_id IS NOT NULL;");
+        await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_pay_rzp_pay ON payments(razorpay_payment_id) WHERE razorpay_payment_id IS NOT NULL;");
+      } catch (idxErr) {
+        console.warn('Index creation notice:', idxErr.message);
+      }
+
       isInitialized = true;
       console.log('✅ Turso/libSQL Schema initialized successfully (registrations, players, payments).');
       return true;
