@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initCentralizedRegistrationWizard();
   initScrollRevealObserver();
   initCardTiltPhysics();
+  initThreeJSScene();
 });
 
 /* ==========================================================================
@@ -704,4 +705,218 @@ function initCardTiltPhysics() {
     });
   });
 }
+
+/* ==========================================================================
+   THREE.JS REAL-TIME 3D FLOATING VOXEL CUBES SCENE
+   ========================================================================== */
+let threeScene, threeCamera, threeRenderer;
+const floating3DObjects = [];
+
+function initThreeJSScene() {
+  if (typeof THREE === 'undefined') return;
+
+  const canvas = document.getElementById('webgl-canvas');
+  if (!canvas) return;
+
+  let width = window.innerWidth;
+  let height = window.innerHeight;
+
+  // Scene & Camera
+  threeScene = new THREE.Scene();
+  threeCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+  threeCamera.position.z = 24;
+
+  const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.matchMedia('(pointer: coarse)').matches;
+  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isTouchOrMobile = window.innerWidth <= 1024 || isTouch || isMobileUA;
+
+  // Renderer
+  threeRenderer = new THREE.WebGLRenderer({
+    canvas: canvas,
+    alpha: true,
+    antialias: !isTouchOrMobile,
+    powerPreference: 'high-performance'
+  });
+  threeRenderer.setSize(width, height);
+  threeRenderer.setPixelRatio(isTouchOrMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.75));
+  threeRenderer.setClearColor(0x000000, 0);
+
+  // Lighting
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+  threeScene.add(ambientLight);
+
+  const purpleLight = new THREE.PointLight(0xc77dff, 2.5, 50);
+  purpleLight.position.set(12, 8, 10);
+  threeScene.add(purpleLight);
+
+  const amberLight = new THREE.PointLight(0xf5a623, 2.2, 50);
+  amberLight.position.set(-12, -8, 8);
+  threeScene.add(amberLight);
+
+  const emeraldLight = new THREE.PointLight(0x70e000, 1.8, 40);
+  emeraldLight.position.set(0, 15, 5);
+  threeScene.add(emeraldLight);
+
+  // Materials for Voxel Cubes
+  const obsidianMat = new THREE.MeshStandardMaterial({
+    color: 0x1f1633,
+    roughness: 0.3,
+    metalness: 0.8,
+    emissive: 0x5a189a,
+    emissiveIntensity: 0.35
+  });
+
+  const emeraldMat = new THREE.MeshStandardMaterial({
+    color: 0x38b000,
+    roughness: 0.2,
+    metalness: 0.5,
+    emissive: 0x70e000,
+    emissiveIntensity: 0.4
+  });
+
+  const amberMat = new THREE.MeshStandardMaterial({
+    color: 0xf5a623,
+    roughness: 0.3,
+    metalness: 0.6,
+    emissive: 0xffbe53,
+    emissiveIntensity: 0.4
+  });
+
+  const cyanMat = new THREE.MeshStandardMaterial({
+    color: 0x06b6d4,
+    roughness: 0.2,
+    metalness: 0.7,
+    emissive: 0x38bdf8,
+    emissiveIntensity: 0.4
+  });
+
+  // Create 3D Voxel Crystal (Center Floating Relic)
+  const crystalGroup = new THREE.Group();
+  const innerGeom = new THREE.OctahedronGeometry(1.6, 0);
+  const outerGeom = new THREE.BoxGeometry(2.4, 2.4, 2.4);
+
+  const wireframeMat = new THREE.MeshBasicMaterial({
+    color: 0xc77dff,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.65
+  });
+
+  const innerCrystal = new THREE.Mesh(innerGeom, obsidianMat);
+  const outerFrame = new THREE.Mesh(outerGeom, wireframeMat);
+
+  crystalGroup.add(innerCrystal);
+  crystalGroup.add(outerFrame);
+  crystalGroup.position.set(7.5, 2, 0);
+  threeScene.add(crystalGroup);
+
+  floating3DObjects.push({
+    mesh: crystalGroup,
+    rotSpeedX: 0.008,
+    rotSpeedY: 0.012,
+    baseY: 2,
+    floatSpeed: 0.002,
+    phase: 0
+  });
+
+  // Create Orbiting Voxel Debris (Small Floating Cubes)
+  const cubeGeom = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+  const smallCubeGeom = new THREE.BoxGeometry(0.7, 0.7, 0.7);
+
+  const debrisConfigs = [
+    { geom: cubeGeom, mat: emeraldMat, pos: [-8.5, 4.5, -4], rx: 0.01, ry: 0.015 },
+    { geom: smallCubeGeom, mat: amberMat, pos: [-9.5, -3.5, 2], rx: -0.012, ry: 0.008 },
+    { geom: cubeGeom, mat: cyanMat, pos: [9.5, -4.5, -2], rx: 0.007, ry: -0.014 },
+    { geom: smallCubeGeom, mat: obsidianMat, pos: [6, 7, -5], rx: -0.009, ry: 0.011 },
+    { geom: smallCubeGeom, mat: emeraldMat, pos: [-5, 8, -6], rx: 0.015, ry: -0.007 }
+  ];
+
+  debrisConfigs.forEach((cfg, idx) => {
+    const mesh = new THREE.Mesh(cfg.geom, cfg.mat);
+    mesh.position.set(cfg.pos[0], cfg.pos[1], cfg.pos[2]);
+    threeScene.add(mesh);
+
+    floating3DObjects.push({
+      mesh: mesh,
+      rotSpeedX: cfg.rx,
+      rotSpeedY: cfg.ry,
+      baseY: cfg.pos[1],
+      floatSpeed: 0.0018 + idx * 0.0005,
+      phase: idx * 1.2
+    });
+  });
+
+  // Mouse Parallax on 3D Scene (Desktop mouse only)
+  let mouseX = 0;
+  let mouseY = 0;
+  let targetCamX = 0;
+  let targetCamY = 0;
+
+  if (!isTouch) {
+    window.addEventListener('mousemove', (e) => {
+      mouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+      mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+    }, { passive: true });
+  }
+
+  // Resize Handler
+  window.addEventListener('resize', () => {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    threeCamera.aspect = width / height;
+    threeCamera.updateProjectionMatrix();
+    threeRenderer.setSize(width, height);
+  });
+
+  // Animation Loop
+  let clock = new THREE.Clock();
+  let isAnimating = true;
+
+  function animate() {
+    if (!isAnimating) return;
+    requestAnimationFrame(animate);
+
+    // On touch/mobile screens, pause render if user is scrolled past 1.5 viewports
+    if (isTouchOrMobile && window.pageYOffset > window.innerHeight * 1.5) {
+      return;
+    }
+
+    const elapsedTime = clock.getElapsedTime();
+
+    // Smooth Camera Track
+    targetCamX = mouseX * 2.2;
+    targetCamY = -mouseY * 1.8;
+    threeCamera.position.x += (targetCamX - threeCamera.position.x) * 0.05;
+    threeCamera.position.y += (targetCamY - threeCamera.position.y) * 0.05;
+
+    // Camera scroll tracking: drift down through 3D space as user scrolls
+    const scrollY = window.pageYOffset || 0;
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight || 1;
+    const scrollFrac = scrollY / maxScroll;
+
+    threeCamera.position.z = 24 - scrollFrac * 10;
+    threeScene.rotation.y = scrollFrac * 0.9;
+    threeScene.position.y = -scrollFrac * 4;
+
+    // Rotate and Bob 3D Voxel Objects
+    floating3DObjects.forEach((obj) => {
+      obj.mesh.rotation.x += obj.rotSpeedX;
+      obj.mesh.rotation.y += obj.rotSpeedY;
+      obj.mesh.position.y = obj.baseY + Math.sin(elapsedTime * 2 + obj.phase) * 0.4;
+    });
+
+    threeRenderer.render(threeScene, threeCamera);
+  }
+
+  animate();
+
+  if (isTouchOrMobile) {
+    window.addEventListener('scroll', () => {
+      if (window.pageYOffset <= window.innerHeight * 1.5) {
+        requestAnimationFrame(animate);
+      }
+    }, { passive: true });
+  }
+}
+
 
