@@ -78,6 +78,11 @@ const GAMES_CATALOGUE = {
   }
 };
 
+const WHATSAPP_GROUPS = {
+  online: 'https://chat.whatsapp.com/CkX2FAdIZP4BnTo61dVQaF',
+  offline: 'https://chat.whatsapp.com/IQxUBMVvl7LH7wJ0ObDxJx'
+};
+
 /* ==========================================================================
    1. CATEGORY FILTER TABS
    ========================================================================== */
@@ -345,6 +350,11 @@ function renderWizardStep() {
     populateStep3Form();
   } else if (wizardState.step === 4) {
     stepTitleEl.textContent = 'JOIN WHATSAPP GROUP';
+    const btnJoin = document.getElementById('btn-join-whatsapp');
+    const groupUrl = WHATSAPP_GROUPS[wizardState.category] || WHATSAPP_GROUPS.online;
+    if (btnJoin) {
+      btnJoin.href = groupUrl;
+    }
     const btnConfirm = document.getElementById('btn-confirm-whatsapp');
     if (btnConfirm && !wizardState.whatsappJoined) {
       btnConfirm.disabled = true;
