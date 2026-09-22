@@ -78,6 +78,9 @@ async function initDb() {
           email_sent_at DATETIME,
           email_attempts INTEGER DEFAULT 0,
           last_email_error TEXT,
+          google_sheets_sync_status TEXT DEFAULT 'PENDING',
+          google_sheets_synced_at DATETIME,
+          google_sheets_sync_error TEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           confirmed_at DATETIME
@@ -127,6 +130,9 @@ async function initDb() {
       await ensureColumnExists('registrations', 'amount', 'REAL');
       await ensureColumnExists('registrations', 'currency', "TEXT DEFAULT 'INR'");
       await ensureColumnExists('registrations', 'updated_at', 'DATETIME');
+      await ensureColumnExists('registrations', 'google_sheets_sync_status', "TEXT DEFAULT 'PENDING'");
+      await ensureColumnExists('registrations', 'google_sheets_synced_at', 'DATETIME');
+      await ensureColumnExists('registrations', 'google_sheets_sync_error', 'TEXT');
       await ensureColumnExists('players', 'full_name', 'TEXT');
       await ensureColumnExists('payments', 'signature', 'TEXT');
       await ensureColumnExists('payments', 'updated_at', 'DATETIME');

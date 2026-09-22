@@ -6,6 +6,7 @@ require('dotenv').config();
 
 const { db, initDb, testDbConnection } = require('./db');
 const emailService = require('./emailService');
+const googleSheetsService = require('./googleSheetsService');
 
 // Initialize Razorpay SDK if available
 let Razorpay = null;
@@ -546,8 +547,13 @@ app.post(['/api/payments/verify', '/api/payment/verify'], async (req, res) => {
 
     console.log(`✅ Registration CONFIRMED & Inserted into Turso DB [${finalRegistrationId}] Payment ID: ${finalPaymentId}`);
 
-    // Trigger Confirmation Email asynchronously
-    setImmediate(() => {
+    // Trigger Google Sheets Sync & Confirmation Email asynchronously
+    setImmediate(async () => {
+      try {
+        await googleSheetsService.syncConfirmedRegistration(finalRegistrationId);
+      } catch (gsErr) {
+        console.warn('⚠️ [GoogleSheets Sync Trigger Notice]:', gsErr.message);
+      }
       emailService.sendRegistrationConfirmation(finalRegistrationId);
     });
 
@@ -747,6 +753,22 @@ app.get('/api/admin/payments', async (req, res) => {
     });
   } catch (err) {
     res.status(500).json({ success: false, error: 'Failed to fetch payments.' });
+  }
+});
+
+// 10. ADMIN GOOGLE SHEETS SYNC / RETRY API
+app.post('/api/admin/sync-sheets', async (req, res) => {
+  try {
+    const { registrationId } = req.body || {};
+    if (registrationId) {
+      const syncRes = await googleSheetsService.syncConfirmedRegistration(registrationId);
+      return res.json(syncRes);
+    } else {
+      const syncAllRes = await googleSheetsService.syncAllPendingRegistrations();
+      return res.json(syncAllRes);
+    }
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 
