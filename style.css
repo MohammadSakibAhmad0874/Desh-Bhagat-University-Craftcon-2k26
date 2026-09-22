@@ -2649,7 +2649,7 @@ a {
   border-radius: var(--radius-sm);
 }
 
-.footer-top-grid { display: grid; grid-template-columns: 1.4fr 0.8fr 1fr 0.8fr; gap: 48px; margin-bottom: 60px; }
+.footer-top-grid { display: grid; grid-template-columns: 1.3fr 0.9fr 1.1fr 0.8fr; gap: 36px; margin-bottom: 50px; }
 .footer-brand-block .brand-wordmark { margin-bottom: 16px; }
 .footer-tagline { font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; }
 .dbu-seal-box { display: flex; align-items: center; gap: 12px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 12px 16px; }
@@ -2657,11 +2657,13 @@ a {
 .seal-info strong { display: block; font-family: var(--font-display); font-size: 0.84rem; color: var(--text-white); }
 .seal-info span { font-size: 0.72rem; color: var(--text-dim); }
 .footer-col-title { font-family: var(--font-pixel); font-size: 0.68rem; letter-spacing: 0.14em; color: var(--text-white); margin-bottom: 20px; }
-.footer-links-col ul { list-style: none; display: flex; flex-direction: column; gap: 12px; }
-.footer-links-col li a { font-size: 0.88rem; color: var(--text-muted); }
+.footer-links-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.footer-links-col li a { font-size: 0.88rem; color: var(--text-muted); text-decoration: none; transition: color var(--transition-fast); }
 .footer-links-col li a:hover { color: var(--color-purple-bright); }
-.footer-contact-item { font-size: 0.84rem; color: var(--text-muted); margin-bottom: 14px; line-height: 1.5; }
+.footer-contact-item { font-size: 0.84rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5; word-break: break-word; }
 .footer-contact-item strong { color: var(--text-white); font-size: 0.86rem; }
+.footer-contact-item a { color: var(--text-muted); text-decoration: none; transition: color var(--transition-fast); }
+.footer-contact-item a:hover { color: var(--color-purple-bright); }
 .footer-social-strip { display: flex; gap: 12px; margin-bottom: 14px; }
 .social-box { width: 36px; height: 36px; background: rgba(255, 255, 255, 0.04); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all var(--transition-fast); }
 .social-box:hover { color: var(--text-white); border-color: var(--border-active); background: rgba(255, 255, 255, 0.1); }
