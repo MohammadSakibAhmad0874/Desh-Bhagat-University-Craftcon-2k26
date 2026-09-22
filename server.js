@@ -121,13 +121,29 @@ const GAMES_REGISTRY = {
 };
 
 /**
- * Initialize Razorpay Instance helper
+ * Safe Razorpay Diagnostics Helper
  */
-function getRazorpayInstance() {
-  const keyId = process.env.RAZORPAY_KEY_ID;
-  const keySecret = process.env.RAZORPAY_KEY_SECRET;
+function getRazorpayDiagnostics() {
+  const keyId = (process.env.RAZORPAY_KEY_ID || '').trim();
+  const keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+  const testMode = process.env.RAZORPAY_TEST_MODE || 'false/undefined';
 
-  if (Razorpay && keyId && keySecret && keyId !== 'rzp_test_craftcon2026') {
+  return {
+    hasKeyId: Boolean(keyId && keyId.length > 0),
+    hasKeySecret: Boolean(keySecret && keySecret.length > 0),
+    isLiveKey: keyId.startsWith('rzp_live_'),
+    keyIdPrefix: keyId ? (keyId.substring(0, 8) + '...') : 'NONE',
+    testMode: testMode,
+    isSdkLoaded: Boolean(Razorpay)
+  };
+}
+
+function getRazorpayInstance() {
+  const diag = getRazorpayDiagnostics();
+  const keyId = (process.env.RAZORPAY_KEY_ID || '').trim();
+  const keySecret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+
+  if (diag.isSdkLoaded && diag.hasKeyId && diag.hasKeySecret) {
     return new Razorpay({
       key_id: keyId,
       key_secret: keySecret
@@ -158,15 +174,17 @@ app.get('/api/health', async (req, res) => {
   } catch (err) {
     return res.status(500).json({
       status: "error",
-      database: "disconnected"
+      database: "disconnected",
+      error: err.message
     });
   }
 });
 
-// 2. GET GAMES CATALOGUE
+// 2. GET GAMES CATALOGUE ENDPOINT
 app.get('/api/games', (req, res) => {
   res.json({
     success: true,
+    count: Object.keys(GAMES_REGISTRY).length,
     games: Object.values(GAMES_REGISTRY)
   });
 });
@@ -222,8 +240,18 @@ app.post('/api/registrations/create', async (req, res) => {
   }
 });
 
-// 4. CREATE RAZORPAY PAYMENT ORDER (NO PERMANENT TURSO REGISTRATION INSERT)
+// 4. CREATE RAZORPAY PAYMENT ORDER (REAL SERVER-SIDE ORDER CREATION)
 app.post(['/api/payments/create-order', '/api/payment/create-order'], async (req, res) => {
+  const diag = getRazorpayDiagnostics();
+
+  console.log('💳 [CREATE-ORDER] Endpoint reached.');
+  console.log(`💳 [DIAGNOSTICS] RAZORPAY_KEY_ID exists: ${diag.hasKeyId}`);
+  console.log(`💳 [DIAGNOSTICS] RAZORPAY_KEY_SECRET exists: ${diag.hasKeySecret}`);
+  console.log(`💳 [DIAGNOSTICS] Key ID starts with rzp_live_: ${diag.isLiveKey}`);
+  console.log(`💳 [DIAGNOSTICS] Key ID Prefix: ${diag.keyIdPrefix}`);
+  console.log(`💳 [DIAGNOSTICS] RAZORPAY_TEST_MODE: ${diag.testMode}`);
+  console.log(`💳 [DIAGNOSTICS] Razorpay SDK Loaded: ${diag.isSdkLoaded}`);
+
   try {
     const { gameId, teamName, college, captain, players, registrationId } = req.body;
 
@@ -231,43 +259,76 @@ app.post(['/api/payments/create-order', '/api/payment/create-order'], async (req
     let targetTeamName = teamName;
     let targetCollege = college;
     let targetCaptain = captain;
-    let targetPlayers = players;
 
     // If registrationId is supplied (e.g. from existing DB record during retry)
     if (registrationId && !gameId) {
-      const regRes = await db.execute({
-        sql: 'SELECT * FROM registrations WHERE registration_id = ?',
-        args: [registrationId]
-      });
-      const existingReg = regRes.rows && regRes.rows.length > 0 ? regRes.rows[0] : null;
-      if (existingReg) {
-        targetGameId = existingReg.game;
-        targetTeamName = existingReg.team_name;
-        targetCollege = existingReg.college;
-        targetCaptain = { name: existingReg.captain_name, email: existingReg.captain_email, phone: existingReg.captain_phone };
+      try {
+        const regRes = await db.execute({
+          sql: 'SELECT * FROM registrations WHERE registration_id = ?',
+          args: [registrationId]
+        });
+        const existingReg = regRes.rows && regRes.rows.length > 0 ? regRes.rows[0] : null;
+        if (existingReg) {
+          targetGameId = existingReg.game;
+          targetTeamName = existingReg.team_name;
+          targetCollege = existingReg.college;
+          targetCaptain = { name: existingReg.captain_name, email: existingReg.captain_email, phone: existingReg.captain_phone };
+        }
+      } catch (dbErr) {
+        console.warn('⚠️ [CREATE-ORDER] DB lookup notice:', dbErr.message);
       }
     }
 
     const gameConfig = GAMES_REGISTRY[targetGameId || 'BGMI'];
     if (!gameConfig) {
+      console.error(`❌ [CREATE-ORDER ERROR] Invalid game selected: ${targetGameId}`);
       return res.status(400).json({ success: false, error: 'Invalid game selected.' });
     }
 
-    // Authoritative Backend Price Calculation (₹50 / person)
+    // Authoritative Backend Price Calculation (₹50 / person rule)
     const requiredPlayerCount = gameConfig.minPlayers;
     const feePerPerson = 50;
-    const totalAmount = requiredPlayerCount * feePerPerson;
-    const amountInPaise = Math.round(totalAmount * 100);
-    const keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_craftcon2026';
+    const totalAmount = requiredPlayerCount * feePerPerson; // e.g. Ludo = ₹50
+    const amountInPaise = Math.round(totalAmount * 100); // e.g. Ludo = 5000 paise
+
+    console.log(`💳 [CREATE-ORDER] Game: ${gameConfig.name} (${gameConfig.id}), Players: ${requiredPlayerCount}, Amount: ₹${totalAmount} (${amountInPaise} paise)`);
+
+    // Verify Server-Side Credentials & SDK
+    if (!diag.isSdkLoaded) {
+      console.error('❌ [CREATE-ORDER ERROR] Razorpay SDK package is not loaded on server.');
+      return res.status(500).json({
+        success: false,
+        error: 'Razorpay SDK is not available on server.'
+      });
+    }
+
+    if (!diag.hasKeyId || !diag.hasKeySecret) {
+      console.error('❌ [CREATE-ORDER ERROR] Server environment missing RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET.');
+      return res.status(500).json({
+        success: false,
+        error: 'Razorpay server configuration error: Missing RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET in environment variables.'
+      });
+    }
+
+    const keyId = (process.env.RAZORPAY_KEY_ID || '').trim();
+    const razorpayInstance = getRazorpayInstance();
+
+    if (!razorpayInstance) {
+      console.error('❌ [CREATE-ORDER ERROR] Failed to instantiate Razorpay client.');
+      return res.status(500).json({
+        success: false,
+        error: 'Razorpay client initialization failed.'
+      });
+    }
 
     const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
     const referenceId = `CRAFT26-${gameConfig.id}-${randomHex}`;
-    let rzpOrderId = `order_${Date.now()}_${randomHex}`;
 
-    const razorpayInstance = getRazorpayInstance();
+    console.log(`💳 [CREATE-ORDER] Invoking Razorpay API orders.create for receipt ${referenceId}...`);
 
-    if (razorpayInstance) {
-      const rzpOrder = await razorpayInstance.orders.create({
+    let rzpOrder;
+    try {
+      rzpOrder = await razorpayInstance.orders.create({
         amount: amountInPaise,
         currency: 'INR',
         receipt: referenceId,
@@ -278,14 +339,32 @@ app.post(['/api/payments/create-order', '/api/payment/create-order'], async (req
           captainEmail: targetCaptain ? targetCaptain.email : ''
         }
       });
-      rzpOrderId = rzpOrder.id;
+      console.log(`✅ [CREATE-ORDER SUCCESS] Razorpay Order Created! Order ID: ${rzpOrder.id}, Amount: ${rzpOrder.amount} ${rzpOrder.currency}`);
+    } catch (rzpErr) {
+      console.error('❌ [CREATE-ORDER RAZORPAY API REJECTION]:', {
+        message: rzpErr.message,
+        statusCode: rzpErr.statusCode,
+        code: rzpErr.error ? rzpErr.error.code : undefined,
+        description: rzpErr.error ? rzpErr.error.description : undefined,
+        field: rzpErr.error ? rzpErr.error.field : undefined,
+        fullError: JSON.stringify(rzpErr)
+      });
+
+      const errorDetail = (rzpErr.error && rzpErr.error.description) 
+        || rzpErr.message 
+        || 'Razorpay API rejected order creation';
+
+      return res.status(500).json({
+        success: false,
+        error: `Razorpay API Order Creation Failed: ${errorDetail}`
+      });
     }
 
-    res.json({
+    return res.status(200).json({
       success: true,
-      keyId,
-      orderId: rzpOrderId,
-      referenceId,
+      keyId: keyId,
+      orderId: rzpOrder.id,
+      referenceId: referenceId,
       registrationId: referenceId,
       amount: amountInPaise,
       displayAmount: totalAmount,
@@ -296,8 +375,11 @@ app.post(['/api/payments/create-order', '/api/payment/create-order'], async (req
     });
 
   } catch (err) {
-    console.error('Error in create-order:', err);
-    res.status(500).json({ success: false, error: 'Failed to create Razorpay payment order.' });
+    console.error('❌ [CREATE-ORDER UNCAUGHT EXCEPTION]:', err);
+    return res.status(500).json({
+      success: false,
+      error: `Failed to create payment order: ${err.message || 'Internal server error'}`
+    });
   }
 });
 
