@@ -250,14 +250,21 @@ function initCentralizedRegistrationWizard() {
     validateAndAdvanceStep();
   });
 
-  // Payment Buttons
-  document.getElementById('btn-trigger-sandbox-pay').addEventListener('click', () => {
-    executeSandboxPayment();
-  });
+  // Payment Step Navigation & Action
+  const btnRazorpay = document.getElementById('btn-trigger-razorpay');
+  if (btnRazorpay) {
+    btnRazorpay.addEventListener('click', () => {
+      executeRazorpayPayment();
+    });
+  }
 
-  document.getElementById('btn-trigger-razorpay').addEventListener('click', () => {
-    executeRazorpayPayment();
-  });
+  const btnStep5Back = document.getElementById('btn-step5-back');
+  if (btnStep5Back) {
+    btnStep5Back.addEventListener('click', () => {
+      wizardState.step = 4;
+      renderWizardStep();
+    });
+  }
 
   document.getElementById('btn-finish-reg').addEventListener('click', () => {
     modal.classList.remove('active');
@@ -539,41 +546,7 @@ async function submitRegistrationOrder() {
   }
 }
 
-/* Sandbox Instant Payment Execution */
-async function executeSandboxPayment() {
-  try {
-    const res = await fetch('/api/payment/verify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        registrationId: wizardState.registrationId,
-        orderId: wizardState.orderId,
-        mockGateway: true
-      })
-    });
-
-    const data = await res.json();
-    if (data.success && data.status === 'CONFIRMED') {
-      showRegistrationSuccess(data);
-    } else {
-      showRegistrationSuccess({
-        registrationId: wizardState.registrationId,
-        game: GAMES_CATALOGUE[wizardState.gameId].name,
-        teamName: wizardState.teamName || `Solo (${wizardState.captain.name})`,
-        college: wizardState.college
-      });
-    }
-  } catch (err) {
-    showRegistrationSuccess({
-      registrationId: wizardState.registrationId,
-      game: GAMES_CATALOGUE[wizardState.gameId].name,
-      teamName: wizardState.teamName || `Solo (${wizardState.captain.name})`,
-      college: wizardState.college
-    });
-  }
-}
-
-/* Real Razorpay Checkout Gateway Connection */
+/* Razorpay Checkout Gateway Connection */
 async function executeRazorpayPayment() {
   try {
     const orderRes = await fetch('/api/payments/create-order', {
@@ -593,8 +566,7 @@ async function executeRazorpayPayment() {
     const amountInPaise = orderData.amount;
 
     if (typeof Razorpay === 'undefined') {
-      console.warn('Razorpay Checkout SDK not found. Executing Sandbox payment...');
-      executeSandboxPayment();
+      alert('Razorpay Checkout SDK is loading. Please try again in a moment.');
       return;
     }
 
@@ -608,7 +580,7 @@ async function executeRazorpayPayment() {
       order_id: orderId,
       handler: async function (response) {
         try {
-          const verifyRes = await fetch('/api/payment/verify', {
+          const verifyRes = await fetch('/api/payments/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -625,22 +597,27 @@ async function executeRazorpayPayment() {
             alert(`Payment verification failed: ${verifyData.error || 'Invalid signature'}`);
           }
         } catch (e) {
-          executeSandboxPayment();
+          alert('Payment verification network error. Please contact tournament support.');
+        }
+      },
+      modal: {
+        ondismiss: function () {
+          console.log('User closed Razorpay modal without completing payment.');
         }
       },
       prefill: {
-        name: wizardState.captain.name,
-        email: wizardState.captain.email,
-        contact: wizardState.captain.phone
+        name: wizardState.captain ? wizardState.captain.name : '',
+        email: wizardState.captain ? wizardState.captain.email : '',
+        contact: wizardState.captain ? wizardState.captain.phone : ''
       },
-      theme: { color: '#9d4edd' }
+      theme: { color: '#ff0054' }
     };
 
     const rzp = new Razorpay(options);
     rzp.open();
   } catch (err) {
     console.error('Razorpay Gateway error:', err);
-    executeSandboxPayment();
+    alert('Unable to initialize Razorpay payment gateway. Please check connection and try again.');
   }
 }
 
