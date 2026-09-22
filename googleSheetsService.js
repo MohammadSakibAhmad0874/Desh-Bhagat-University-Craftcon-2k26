@@ -341,9 +341,101 @@ async function syncAllPendingRegistrations() {
   }
 }
 
+/**
+ * Harmless Diagnostic Test Endpoint Function for Google Sheets Integration
+ */
+async function testGoogleSheetsConnection() {
+  const clientEmail = (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '').trim();
+  const rawPrivateKey = process.env.GOOGLE_PRIVATE_KEY || '';
+  const spreadsheetId = getSpreadsheetId();
+
+  const hasEmail = Boolean(clientEmail);
+  const hasKey = Boolean(rawPrivateKey);
+  const hasSheetId = Boolean(spreadsheetId);
+
+  console.log('🔍 [GoogleSheets Diagnostic Test]');
+  console.log(`- GOOGLE_SERVICE_ACCOUNT_EMAIL present: ${hasEmail} (${hasEmail ? clientEmail : 'MISSING'})`);
+  console.log(`- GOOGLE_PRIVATE_KEY present: ${hasKey} (Length: ${rawPrivateKey.length})`);
+  console.log(`- GOOGLE_SHEETS_SPREADSHEET_ID present: ${hasSheetId} (${hasSheetId ? spreadsheetId : 'MISSING'})`);
+
+  if (!hasEmail || !hasKey || !hasSheetId) {
+    const missing = [];
+    if (!hasEmail) missing.push('GOOGLE_SERVICE_ACCOUNT_EMAIL');
+    if (!hasKey) missing.push('GOOGLE_PRIVATE_KEY');
+    if (!hasSheetId) missing.push('GOOGLE_SHEETS_SPREADSHEET_ID');
+
+    return {
+      success: false,
+      error: `Missing environment variable(s): ${missing.join(', ')}`,
+      diagnostics: {
+        hasEmail,
+        hasKey,
+        hasSheetId
+      }
+    };
+  }
+
+  const auth = getGoogleAuthClient();
+  if (!auth) {
+    return {
+      success: false,
+      error: 'Failed to instantiate Google Service Account JWT Auth client.',
+      diagnostics: { hasEmail, hasKey, hasSheetId }
+    };
+  }
+
+  try {
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    // Harmless metadata fetch (read-only)
+    const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+    const sheetTitles = (spreadsheet.data.sheets || []).map(s => s.properties.title);
+    const spreadsheetTitle = spreadsheet.data.properties ? spreadsheet.data.properties.title : 'Untitled';
+
+    console.log(`✅ [GoogleSheets Diagnostic Success] Spreadsheet "${spreadsheetTitle}" accessible! Worksheets:`, sheetTitles);
+
+    const hasRegistrations = sheetTitles.includes('Registrations');
+    const hasPlayers = sheetTitles.includes('Players');
+
+    // Also auto-ensure headers exist without adding fake data
+    await ensureWorksheetsAndHeaders(sheets, spreadsheetId);
+
+    return {
+      success: true,
+      googleSheets: 'connected',
+      spreadsheet: 'accessible',
+      spreadsheetTitle,
+      worksheet: hasRegistrations ? 'Registrations' : 'missing',
+      worksheets: sheetTitles,
+      hasRegistrations,
+      hasPlayers
+    };
+  } catch (err) {
+    console.error('❌ [GoogleSheets Diagnostic Error]:', err.message);
+
+    let cleanMessage = err.message || 'Google API connection error';
+    if (err.response && err.response.data && err.response.data.error) {
+      const gErr = err.response.data.error;
+      cleanMessage = gErr.message || cleanMessage;
+    }
+
+    return {
+      success: false,
+      error: `Google Sheets Connection Error: ${cleanMessage}`,
+      diagnostics: {
+        hasEmail,
+        hasKey,
+        hasSheetId
+      }
+    };
+  }
+}
+
 module.exports = {
   getGoogleAuthClient,
   getSpreadsheetId,
   syncConfirmedRegistration,
-  syncAllPendingRegistrations
+  syncAllPendingRegistrations,
+  testGoogleSheetsConnection
 };
+

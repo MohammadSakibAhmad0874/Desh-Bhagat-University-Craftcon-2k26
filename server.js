@@ -772,6 +772,21 @@ app.post('/api/admin/sync-sheets', async (req, res) => {
   }
 });
 
+// 11. TEMPORARY DIAGNOSTIC TEST ENDPOINT FOR GOOGLE SHEETS VERCEL INTEGRATION
+app.all(['/api/test/google-sheets', '/api/test/googlesheets'], async (req, res) => {
+  try {
+    const result = await googleSheetsService.testGoogleSheetsConnection();
+    const statusCode = result.success ? 200 : 500;
+    return res.status(statusCode).json(result);
+  } catch (err) {
+    console.error('❌ Diagnostic endpoint uncaught exception:', err);
+    return res.status(500).json({
+      success: false,
+      error: `Diagnostic test exception: ${err.message || 'Internal server error'}`
+    });
+  }
+});
+
 // Explicit static asset handlers to guarantee HTTP 200 delivery
 app.get('/gaming.js', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'gaming.js'));
