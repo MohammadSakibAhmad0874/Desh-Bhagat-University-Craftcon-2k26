@@ -889,66 +889,53 @@ function initThreeJSScene() {
   threeRenderer.setPixelRatio(isTouchOrMobile ? 1.0 : Math.min(window.devicePixelRatio, 1.5));
   threeRenderer.setClearColor(0x000000, 0);
 
-  // 3. Dynamic Lighting Rig
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+  // 3. Optimized Dynamic Lighting Rig (1 Ambient, 1 Key Directional, 1 Mouse Specular)
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
   threeScene.add(ambientLight);
 
+  const keyLight = new THREE.DirectionalLight(0xffffff, 1.1);
+  keyLight.position.set(5, 12, 10);
+  threeScene.add(keyLight);
+
   // Cursor Specular Point Light (Follows mouse on desktop)
-  mouseLight = new THREE.PointLight(0x00f2fe, 3.2, 55);
+  mouseLight = new THREE.PointLight(0x00f2fe, 2.5, 40);
   mouseLight.position.set(0, 0, 12);
   threeScene.add(mouseLight);
 
-  const redstoneLight = new THREE.PointLight(0xff0054, 2.8, 50);
-  redstoneLight.position.set(-14, 10, 8);
-  threeScene.add(redstoneLight);
-
-  const amberLight = new THREE.PointLight(0xffbe0b, 2.5, 50);
-  amberLight.position.set(14, -10, 8);
-  threeScene.add(amberLight);
-
-  const emeraldLight = new THREE.PointLight(0x00e676, 2.2, 45);
-  emeraldLight.position.set(0, 14, 6);
-  threeScene.add(emeraldLight);
-
-  // 4. Shaders & Materials for Voxel Cubes
-  const obsidianMat = new THREE.MeshStandardMaterial({
+  // 4. Low-Overhead Shaders & Materials for Voxel Cubes
+  const obsidianMat = new THREE.MeshPhongMaterial({
     color: 0x1a0933,
-    roughness: 0.2,
-    metalness: 0.9,
-    emissive: 0x5a189a,
-    emissiveIntensity: 0.45
+    shininess: 60,
+    emissive: 0x3a0ca3,
+    emissiveIntensity: 0.35
   });
 
-  const emeraldMat = new THREE.MeshStandardMaterial({
+  const emeraldMat = new THREE.MeshPhongMaterial({
     color: 0x00e676,
-    roughness: 0.15,
-    metalness: 0.6,
-    emissive: 0x38b000,
-    emissiveIntensity: 0.45
+    shininess: 70,
+    emissive: 0x007722,
+    emissiveIntensity: 0.35
   });
 
-  const amberMat = new THREE.MeshStandardMaterial({
+  const amberMat = new THREE.MeshPhongMaterial({
     color: 0xffbe0b,
-    roughness: 0.2,
-    metalness: 0.7,
+    shininess: 70,
     emissive: 0xd97706,
-    emissiveIntensity: 0.45
+    emissiveIntensity: 0.35
   });
 
-  const cyanMat = new THREE.MeshStandardMaterial({
+  const cyanMat = new THREE.MeshPhongMaterial({
     color: 0x00f2fe,
-    roughness: 0.15,
-    metalness: 0.8,
+    shininess: 80,
     emissive: 0x0284c7,
-    emissiveIntensity: 0.5
+    emissiveIntensity: 0.4
   });
 
-  const redstoneMat = new THREE.MeshStandardMaterial({
+  const redstoneMat = new THREE.MeshPhongMaterial({
     color: 0xff0054,
-    roughness: 0.2,
-    metalness: 0.7,
+    shininess: 70,
     emissive: 0xbe123c,
-    emissiveIntensity: 0.5
+    emissiveIntensity: 0.4
   });
 
   // 5. 3D Beacon Relic Group (Floating Hero Feature)
@@ -956,7 +943,7 @@ function initThreeJSScene() {
   const innerOctaGeom = new THREE.OctahedronGeometry(1.7, 0);
   const innerCoreGeom = new THREE.IcosahedronGeometry(1.1, 0);
   const outerBoxGeom = new THREE.BoxGeometry(2.7, 2.7, 2.7);
-  const ringGeom = new THREE.TorusGeometry(3.3, 0.08, 16, 100);
+  const ringGeom = new THREE.TorusGeometry(3.3, 0.08, 12, 48);
 
   const wireframeMat = new THREE.MeshBasicMaterial({
     color: 0x00f2fe,
@@ -1027,21 +1014,14 @@ function initThreeJSScene() {
     });
   });
 
-  // 7. Atmospheric Glowing Voxel Particle Dust
-  const particleCount = isTouchOrMobile ? 45 : 110;
+  // 7. High-Performance GPU Particle Dust System
+  const particleCount = isTouchOrMobile ? 35 : 80;
   const particlePositions = new Float32Array(particleCount * 3);
-  const particleSpeeds = [];
 
   for (let i = 0; i < particleCount; i++) {
     particlePositions[i * 3] = (Math.random() - 0.5) * 36;
     particlePositions[i * 3 + 1] = (Math.random() - 0.5) * 36;
     particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 20 - 4;
-
-    particleSpeeds.push({
-      x: (Math.random() - 0.5) * 0.008,
-      y: 0.008 + Math.random() * 0.012,
-      z: (Math.random() - 0.5) * 0.005
-    });
   }
 
   const particleGeom = new THREE.BufferGeometry();
@@ -1049,9 +1029,9 @@ function initThreeJSScene() {
 
   const particleMat = new THREE.PointsMaterial({
     color: 0xffbe0b,
-    size: 0.22,
+    size: 0.2,
     transparent: true,
-    opacity: 0.7,
+    opacity: 0.65,
     blending: THREE.AdditiveBlending
   });
 
@@ -1092,6 +1072,7 @@ function initThreeJSScene() {
   const clock = new THREE.Clock();
   let isCanvasVisible = true;
   let animFrameId = null;
+  let currentScrollFrac = 0;
 
   if ('IntersectionObserver' in window) {
     const canvasObserver = new IntersectionObserver((entries) => {
@@ -1128,49 +1109,43 @@ function initThreeJSScene() {
       return;
     }
 
+    const delta = Math.min(clock.getDelta(), 0.1);
+    const deltaFactor = delta * 60; // Normalize for 60 FPS
     const elapsedTime = clock.getElapsedTime();
 
     // Smooth Camera & Specular Mouse Light Track
-    targetCamX = mouseX * 2.5;
-    targetCamY = -mouseY * 2.0;
+    targetCamX = mouseX * 2.2;
+    targetCamY = -mouseY * 1.8;
 
-    threeCamera.position.x += (targetCamX - threeCamera.position.x) * 0.05;
-    threeCamera.position.y += (targetCamY - threeCamera.position.y) * 0.05;
+    threeCamera.position.x += (targetCamX - threeCamera.position.x) * 0.06 * deltaFactor;
+    threeCamera.position.y += (targetCamY - threeCamera.position.y) * 0.06 * deltaFactor;
 
     if (mouseLight) {
-      mouseLight.position.x = mouseX * 16;
-      mouseLight.position.y = -mouseY * 12;
+      mouseLight.position.x = mouseX * 15;
+      mouseLight.position.y = -mouseY * 11;
     }
 
-    // Scroll Camera Depth Tracking
+    // Lerped Scroll Camera Depth Tracking for buttery smooth motion
     const scrollY = window.pageYOffset || 0;
-    const maxScroll = document.documentElement.scrollHeight - window.innerHeight || 1;
-    const scrollFrac = scrollY / maxScroll;
+    const maxScroll = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
+    const targetScrollFrac = scrollY / maxScroll;
+    currentScrollFrac += (targetScrollFrac - currentScrollFrac) * 0.08 * deltaFactor;
 
-    threeCamera.position.z = 24 - scrollFrac * 12;
-    threeScene.rotation.y = scrollFrac * 0.85;
-    threeScene.position.y = -scrollFrac * 4.5;
+    threeCamera.position.z = 24 - currentScrollFrac * 12;
+    threeScene.rotation.y = currentScrollFrac * 0.85;
+    threeScene.position.y = -currentScrollFrac * 4.5;
 
-    // Rotate and Bob 3D Voxel Objects
+    // Rotate and Bob 3D Voxel Objects using Delta Time
     floating3DObjects.forEach((obj) => {
-      obj.mesh.rotation.x += obj.rotSpeedX;
-      obj.mesh.rotation.y += obj.rotSpeedY;
-      obj.mesh.position.y = obj.baseY + Math.sin(elapsedTime * 2.2 + obj.phase) * 0.45;
+      obj.mesh.rotation.x += obj.rotSpeedX * deltaFactor;
+      obj.mesh.rotation.y += obj.rotSpeedY * deltaFactor;
+      obj.mesh.position.y = obj.baseY + Math.sin(elapsedTime * 2.0 + obj.phase) * 0.45;
     });
 
-    // Animate 3D Voxel Particle Dust Drifting Upward
+    // GPU Floating Dust Rotation (Zero CPU Buffer Re-upload overhead!)
     if (particleSystem) {
-      const positions = particleSystem.geometry.attributes.position.array;
-      for (let i = 0; i < particleCount; i++) {
-        positions[i * 3 + 1] += particleSpeeds[i].y;
-        positions[i * 3] += particleSpeeds[i].x;
-
-        if (positions[i * 3 + 1] > 18) {
-          positions[i * 3 + 1] = -18;
-          positions[i * 3] = (Math.random() - 0.5) * 36;
-        }
-      }
-      particleSystem.geometry.attributes.position.needsUpdate = true;
+      particleSystem.rotation.y += 0.0006 * deltaFactor;
+      particleSystem.position.y = Math.sin(elapsedTime * 0.5) * 0.6;
     }
 
     threeRenderer.render(threeScene, threeCamera);
