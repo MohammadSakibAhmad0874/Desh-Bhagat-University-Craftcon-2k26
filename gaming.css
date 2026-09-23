@@ -1613,4 +1613,176 @@ footer {
   }
 }
 
+/* ==========================================================================
+   REALISTIC LICKING BOUNDARY FLAME ANIMATION (ACROSS ALL CARDS & DIVS)
+   ========================================================================== */
+
+/* 1. Container Positioning & Clipping Overrides */
+.gaming-hero-content,
+.game-card,
+.battle-plan-card,
+.faq-accordion-card,
+.gaming-modal-container,
+.category-option-card,
+.price-summary-box,
+.modal-step-card,
+.voucher-card {
+  position: relative !important;
+  overflow: visible !important;
+  z-index: 1;
+}
+
+/* Preserve top corner rounding for inner card image wrappers */
+.game-card-img-wrap {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  overflow: hidden;
+}
+
+/* 2. Licking Flame Border Pseudo-Element */
+.gaming-hero-content::before,
+.game-card::before,
+.battle-plan-card::before,
+.faq-accordion-card::before,
+.gaming-modal-container::before,
+.category-option-card::before,
+.price-summary-box::before,
+.modal-step-card::before,
+.voucher-card::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    /* Top border tall leaping flame tongues */
+    radial-gradient(ellipse 18px 22px at 14% -4px, var(--flame-core, #fff) 0%, var(--flame-mid, #ff7700) 45%, var(--flame-outer, #ff2200) 70%, transparent 95%),
+    radial-gradient(ellipse 24px 28px at 36% -8px, var(--flame-core, #fff) 0%, var(--flame-mid, #ff7700) 40%, var(--flame-outer, #cc1100) 72%, transparent 98%),
+    radial-gradient(ellipse 20px 24px at 60% -5px, var(--flame-core, #fff) 0%, var(--flame-mid, #ff7700) 45%, var(--flame-outer, #ff2200) 70%, transparent 95%),
+    radial-gradient(ellipse 22px 26px at 84% -7px, var(--flame-core, #fff) 0%, var(--flame-mid, #ff7700) 40%, var(--flame-outer, #cc1100) 72%, transparent 98%),
+    /* Bottom border roaring flames */
+    radial-gradient(ellipse 20px 18px at 22% calc(100% + 4px), var(--flame-core, #fff) 0%, var(--flame-mid, #ff7700) 45%, var(--flame-outer, #ff2200) 70%, transparent 95%),
+    radial-gradient(ellipse 26px 20px at 54% calc(100% + 6px), var(--flame-core, #fff) 0%, var(--flame-mid, #ff7700) 40%, var(--flame-outer, #cc1100) 72%, transparent 98%),
+    radial-gradient(ellipse 20px 18px at 80% calc(100% + 4px), var(--flame-core, #fff) 0%, var(--flame-mid, #ff7700) 45%, var(--flame-outer, #ff2200) 70%, transparent 95%),
+    /* Left border licking flame tongues */
+    radial-gradient(ellipse 18px 22px at -4px 28%, var(--flame-core, #fff) 0%, var(--flame-mid, #ff7700) 45%, var(--flame-outer, #ff2200) 70%, transparent 95%),
+    radial-gradient(ellipse 20px 24px at -6px 72%, var(--flame-core, #fff) 0%, var(--flame-mid, #ff7700) 40%, var(--flame-outer, #cc1100) 72%, transparent 98%),
+    /* Right border licking flame tongues */
+    radial-gradient(ellipse 18px 22px at calc(100% + 4px) 32%, var(--flame-core, #fff) 0%, var(--flame-mid, #ff7700) 45%, var(--flame-outer, #ff2200) 70%, transparent 95%),
+    radial-gradient(ellipse 20px 24px at calc(100% + 6px) 76%, var(--flame-core, #fff) 0%, var(--flame-mid, #ff7700) 40%, var(--flame-outer, #cc1100) 72%, transparent 98%);
+  filter: blur(2.5px) brightness(1.3) contrast(1.35);
+  opacity: 0.92;
+  animation: realisticFireFlicker 1.8s infinite ease-in-out alternate;
+}
+
+/* 3. Hover Expansion Effect */
+.gaming-hero-content:hover::before,
+.game-card:hover::before,
+.battle-plan-card:hover::before,
+.faq-accordion-card:hover::before,
+.gaming-modal-container:hover::before,
+.category-option-card:hover::before,
+.price-summary-box:hover::before,
+.modal-step-card:hover::before,
+.voucher-card:hover::before {
+  inset: -12px;
+  filter: blur(2.8px) brightness(1.6) contrast(1.45);
+  opacity: 1;
+}
+
+/* 4. VISUAL COLOR MATCHING PRESETS */
+/* Hero Main Banner: Crimson Redstone Flame */
+.gaming-hero-content {
+  --flame-core: #fff5f5;
+  --flame-mid: #ff0054;
+  --flame-outer: #990011;
+}
+
+/* BGMI Card: Deep Red Fire */
+.game-card[data-game="BGMI"] {
+  --flame-core: #fff5f5;
+  --flame-mid: #ff2238;
+  --flame-outer: #990011;
+}
+
+/* Free Fire MAX Card: Orange Blaze Flame */
+.game-card[data-game="FREE_FIRE"] {
+  --flame-core: #fffbe6;
+  --flame-mid: #ff6600;
+  --flame-outer: #cc1100;
+}
+
+/* Mobile Legends Card: Ender Purple Flame */
+.game-card[data-game="MOBILE_LEGENDS"] {
+  --flame-core: #faf5ff;
+  --flame-mid: #c77dff;
+  --flame-outer: #6a0dad;
+}
+
+/* Ludo King Card: Emerald Green Flame */
+.game-card[data-game="LUDO"] {
+  --flame-core: #f0fff4;
+  --flame-mid: #00e676;
+  --flame-outer: #007722;
+}
+
+/* Speed Chess Card: Solar Amber Flame */
+.game-card[data-game="CHESS"] {
+  --flame-core: #fffbe6;
+  --flame-mid: #ffb703;
+  --flame-outer: #d48800;
+}
+
+/* Carrom Strike Card: Cyan Blue Flame */
+.game-card[data-game="CARROM"] {
+  --flame-core: #f0faff;
+  --flame-mid: #00d4ff;
+  --flame-outer: #0055ff;
+}
+
+/* Tournament Details Cards: Amber/Red Flame */
+.battle-plan-card {
+  --flame-core: #fffbe6;
+  --flame-mid: #ff7700;
+  --flame-outer: #cc1100;
+}
+
+/* FAQ Accordion Cards: Redstone Flame */
+.faq-accordion-card {
+  --flame-core: #fff5f5;
+  --flame-mid: #ff0054;
+  --flame-outer: #990011;
+}
+
+/* Wizard Modal Popup: Crimson Red Flame */
+.gaming-modal-container {
+  --flame-core: #fff5f5;
+  --flame-mid: #ff0054;
+  --flame-outer: #990011;
+}
+
+/* Category Option Cards in Modal */
+.category-option-card[data-cat="online"] {
+  --flame-core: #fff5f5;
+  --flame-mid: #ff0054;
+  --flame-outer: #990011;
+}
+
+.category-option-card[data-cat="offline"] {
+  --flame-core: #f0fff4;
+  --flame-mid: #00e676;
+  --flame-outer: #007722;
+}
+
+/* Price Summary, Step Cards & Voucher Cards */
+.price-summary-box,
+.voucher-card,
+.modal-step-card {
+  --flame-core: #fffbe6;
+  --flame-mid: #ff6600;
+  --flame-outer: #cc1100;
+}
+
+
 
