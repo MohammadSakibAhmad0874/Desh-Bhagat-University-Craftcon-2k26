@@ -963,105 +963,38 @@ footer {
   100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-/* --- INTERSECTIONOBSERVER SCROLL REVEAL (ENTER + EXIT MOTION ENGINE) --- */
-.scroll-reveal,
-.reveal-on-scroll,
-[data-scroll-reveal] {
+/* --- SECTION SCROLL REVEALS & MINECRAFT CLIP-PATH MASK --- */
+.reveal-on-scroll {
   opacity: 0;
+  transform: translateY(30px) scale(0.98);
+  filter: blur(4px);
+  transition: opacity 0.75s var(--motion-ease-out),
+              transform 0.75s var(--motion-ease-out),
+              filter 0.75s var(--motion-ease-out),
+              clip-path 0.85s var(--motion-ease-out);
   will-change: opacity, transform, filter;
-  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
-              transform 700ms cubic-bezier(0.16, 1, 0.3, 1),
-              filter 700ms cubic-bezier(0.16, 1, 0.3, 1);
-  transition-delay: var(--delay, 0ms);
 }
 
-/* Direction 1: LEFT (Primary sections enter from left) */
-.scroll-left,
-.reveal-on-scroll.scroll-left,
-[data-scroll-reveal="left"] {
-  transform: translateX(-60px);
-}
-
-/* Direction 2: RIGHT (Secondary sections enter from right) */
-.scroll-right,
-.reveal-on-scroll.scroll-right,
-[data-scroll-reveal="right"] {
-  transform: translateX(60px);
-}
-
-/* Direction 3: UP (Cards & Grid items enter from bottom) */
-.scroll-up,
-.reveal-on-scroll,
-.reveal-on-scroll.scroll-up,
-[data-scroll-reveal="up"] {
-  transform: translateY(45px);
-}
-
-/* Direction 4: FADE (Hero elements & subtle fade) */
-.scroll-fade,
-.reveal-on-scroll.scroll-fade,
-[data-scroll-reveal="fade"] {
-  transform: translateY(15px) scale(0.98);
-}
-
-/* Hero Content subtle scroll reveal (never completely disappears) */
-.gaming-hero-content.scroll-reveal,
-.gaming-hero-content[data-scroll-reveal] {
-  opacity: 0.25;
-  transform: translateY(0) scale(0.98);
-  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
-              transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* Section Header Specific Motion Hierarchy */
-.section-header-centered .pixel-tag,
-.section-header-centered .gaming-main-title {
-  opacity: 0;
-  transform: translateX(-35px);
-  transition: opacity 650ms cubic-bezier(0.16, 1, 0.3, 1),
-              transform 650ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.section-header-centered p {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: opacity 650ms cubic-bezier(0.16, 1, 0.3, 1) 100ms,
-              transform 650ms cubic-bezier(0.16, 1, 0.3, 1) 100ms;
-}
-
-.section-header-centered.is-visible .pixel-tag,
-.section-header-centered.is-visible .gaming-main-title {
+.pixel-mask-reveal {
   opacity: 1;
-  transform: translateX(0);
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  transition: opacity 0.75s var(--motion-ease-out), transform 0.75s var(--motion-ease-out);
 }
 
-.section-header-centered.is-visible p {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* ACTIVE VISIBLE STATE (ENTER VIEWPORT) */
-.scroll-reveal.is-visible,
 .reveal-on-scroll.is-visible,
-[data-scroll-reveal].is-visible {
-  opacity: 1 !important;
-  transform: translate(0, 0) scale(1) !important;
-  filter: blur(0) !important;
-}
-
-/* Hover overrides for game cards when visible */
-.game-card.is-visible:hover {
-  transform: translateY(-8px) scale(1) !important;
+.pixel-mask-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
 }
 
 /* Stagger Delays for Cards & Items */
-.delay-0, [data-delay="0"] { --delay: 0ms; transition-delay: 0ms; }
-.delay-1, [data-delay="1"] { --delay: 100ms; transition-delay: 100ms; }
-.delay-2, [data-delay="2"] { --delay: 200ms; transition-delay: 200ms; }
-.delay-3, [data-delay="3"] { --delay: 300ms; transition-delay: 300ms; }
-.delay-4, [data-delay="4"] { --delay: 400ms; transition-delay: 400ms; }
-.delay-5, [data-delay="5"] { --delay: 500ms; transition-delay: 500ms; }
-.delay-6, [data-delay="6"] { --delay: 600ms; transition-delay: 600ms; }
+.delay-0 { transition-delay: 0ms; }
+.delay-1 { transition-delay: 90ms; }
+.delay-2 { transition-delay: 180ms; }
+.delay-3 { transition-delay: 270ms; }
+.delay-4 { transition-delay: 360ms; }
+.delay-5 { transition-delay: 450ms; }
 
 /* --- NAVIGATION LINK ANIMATED UNDERLINE & ACTIVE ITEM --- */
 .desktop-nav .nav-link {
@@ -1850,6 +1783,135 @@ footer {
   --flame-mid: #ff6600;
   --flame-outer: #cc1100;
 }
+
+/* ==========================================================================
+   FAST RENDERING & ULTRA-RESPONSIVE COMPREHENSIVE POLISH
+   ========================================================================== */
+
+/* 1. Hardware acceleration & rendering containment for speed */
+button, a, input, select, textarea, .filter-btn, .game-card, .pill-cta-btn {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#scroll-progress-bar,
+.mobile-nav-drawer,
+.gaming-modal-overlay {
+  will-change: transform, opacity;
+}
+
+.game-showcase-section,
+#tournament,
+#faq,
+.site-footer {
+  content-visibility: auto;
+  contain-intrinsic-size: 800px;
+}
+
+/* 2. Modal Flexbox Mechanics for perfect responsiveness across device heights */
+.gaming-modal-container {
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: 90vh !important;
+  box-sizing: border-box !important;
+}
+
+.wizard-header {
+  flex-shrink: 0 !important;
+}
+
+.wizard-progress-bar-wrap {
+  flex-shrink: 0 !important;
+}
+
+.wizard-body {
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+}
+
+.wizard-footer {
+  flex-shrink: 0 !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  background: var(--bg-surface-elevated) !important;
+  z-index: 10 !important;
+  border-top: 1px solid var(--gaming-border) !important;
+}
+
+/* 3. Input accessibility & iOS zoom prevention */
+.input-field-custom,
+select.input-field-custom {
+  font-size: 16px !important;
+  border-radius: 8px !important;
+  box-sizing: border-box !important;
+}
+
+/* 4. Ultra-responsive Breakpoint adjustments */
+@media (max-width: 768px) {
+  .site-header .header-container {
+    padding: 0 12px !important;
+  }
+
+  .brand-wordmark {
+    gap: 6px !important;
+  }
+
+  .brand-text {
+    font-size: 1.15rem !important;
+  }
+
+  .games-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-tag {
+    display: none !important;
+  }
+
+  .header-actions {
+    gap: 8px !important;
+  }
+
+  .header-actions .btn-gaming-secondary span {
+    font-size: 0.75rem !important;
+  }
+
+  .pill-cta-btn span {
+    font-size: 0.75rem !important;
+  }
+
+  .gaming-hero-content {
+    max-width: 100% !important;
+    padding: 18px 16px !important;
+  }
+
+  .gaming-main-title {
+    font-size: 1.85rem !important;
+  }
+
+  .fee-value {
+    font-size: 1.45rem !important;
+  }
+
+  .games-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .wizard-title {
+    font-size: 1.05rem !important;
+  }
+
+  .btn-wizard-prev,
+  .btn-wizard-next {
+    width: 48% !important;
+    padding: 10px 8px !important;
+  }
+}
+
 
 
 

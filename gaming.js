@@ -767,21 +767,24 @@ function showRegistrationSuccess(data) {
    4. SCROLL REVEAL OBSERVER & INTERACTIVE ANIMATIONS
    ========================================================================== */
 function initScrollRevealObserver() {
-  const revealElements = document.querySelectorAll('.scroll-reveal, .reveal-on-scroll, [data-scroll-reveal], .section-header-centered');
+  const revealElements = document.querySelectorAll('.reveal-on-scroll, .section-header-centered, .pixel-mask-reveal');
   if (!revealElements.length) return;
+
+  // Set initial visibility fallback so elements are never hidden
+  revealElements.forEach(el => {
+    el.classList.add('is-visible');
+  });
 
   const observerOptions = {
     root: null,
-    rootMargin: '0px 0px -40px 0px',
-    threshold: 0.15
+    rootMargin: '0px 0px -50px 0px',
+    threshold: 0.05
   };
 
   const revealObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         entry.target.classList.add('is-visible');
-      } else {
-        entry.target.classList.remove('is-visible');
       }
     });
   }, observerOptions);
@@ -813,35 +816,33 @@ function initScrollRevealObserver() {
   sections.forEach(sec => spyObserver.observe(sec));
 }
 
-function initHeroParallax() {
-  const bgImg = document.querySelector('.bg-tall-img');
-  if (!bgImg) return;
-
-  window.addEventListener('scroll', () => {
-    const scrollY = window.scrollY;
-    // Subtle background shift (0 to 20px max)
-    const parallaxOffset = Math.min(Math.max(scrollY * 0.04, 0), 20);
-    bgImg.style.transform = `translateY(${parallaxOffset}px)`;
-  }, { passive: true });
-}
-
 function initCardTiltPhysics() {
-  const cards = document.querySelectorAll('.game-card, .arena-stat-card');
+  const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.matchMedia('(pointer: coarse)').matches;
+  if (isTouch || window.innerWidth <= 768) return;
+
+  const cards = document.querySelectorAll('.game-card, .arena-stat-card, .battle-plan-card');
 
   cards.forEach(card => {
+    let ticking = false;
     card.addEventListener('mousemove', (e) => {
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
 
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
 
-      const rotateX = ((y - centerY) / centerY) * -7;
-      const rotateY = ((x - centerX) / centerX) * 7;
+          const rotateX = ((y - centerY) / centerY) * -6;
+          const rotateY = ((x - centerX) / centerX) * 6;
 
-      card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateY(-10px) scale(1.02)`;
-    });
+          card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) translateY(-8px) scale(1.02)`;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }, { passive: true });
 
     card.addEventListener('mouseleave', () => {
       card.style.transform = '';
@@ -1070,29 +1071,57 @@ function initThreeJSScene() {
     }, { passive: true });
   }
 
-  // 9. Resize Handler
+  // 9. Resize Handler (Throttled)
+  let resizeTimeout = null;
   window.addEventListener('resize', () => {
-    width = window.innerWidth;
-    height = window.innerHeight;
-    threeCamera.aspect = width / height;
-    threeCamera.updateProjectionMatrix();
-    threeRenderer.setSize(width, height);
+    if (resizeTimeout) clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      threeCamera.aspect = width / height;
+      threeCamera.updateProjectionMatrix();
+      threeRenderer.setSize(width, height);
 
-    if (relicGroup) {
-      relicGroup.position.x = width > 768 ? 8.5 : 0;
+      if (relicGroup) {
+        relicGroup.position.x = width > 768 ? 8.5 : 0;
+      }
+    }, 100);
+  }, { passive: true });
+
+  // 10. Animation Render Loop & Tab/Viewport Pause Observer
+  const clock = new THREE.Clock();
+  let isCanvasVisible = true;
+  let animFrameId = null;
+
+  if ('IntersectionObserver' in window) {
+    const canvasObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        isCanvasVisible = entry.isIntersecting;
+        if (isCanvasVisible && !animFrameId) {
+          animFrameId = requestAnimationFrame(animate);
+        }
+      });
+    }, { threshold: 0.02 });
+    canvasObserver.observe(canvas);
+  }
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      isCanvasVisible = false;
+    } else {
+      isCanvasVisible = true;
+      if (!animFrameId) {
+        animFrameId = requestAnimationFrame(animate);
+      }
     }
   });
 
-  // 10. Animation Render Loop
-  const clock = new THREE.Clock();
-
   function animate() {
-    if (prefersReducedMotion) {
-      threeRenderer.render(threeScene, threeCamera);
+    animFrameId = null;
+
+    if (!isCanvasVisible || prefersReducedMotion) {
       return;
     }
-
-    requestAnimationFrame(animate);
 
     // On mobile devices, suspend rendering when scrolled past 1.5 viewports
     if (isTouchOrMobile && window.pageYOffset > window.innerHeight * 1.5) {
@@ -1145,14 +1174,15 @@ function initThreeJSScene() {
     }
 
     threeRenderer.render(threeScene, threeCamera);
+    animFrameId = requestAnimationFrame(animate);
   }
 
-  animate();
+  animFrameId = requestAnimationFrame(animate);
 
   if (isTouchOrMobile) {
     window.addEventListener('scroll', () => {
-      if (window.pageYOffset <= window.innerHeight * 1.5) {
-        requestAnimationFrame(animate);
+      if (isCanvasVisible && window.pageYOffset <= window.innerHeight * 1.5 && !animFrameId) {
+        animFrameId = requestAnimationFrame(animate);
       }
     }, { passive: true });
   }
