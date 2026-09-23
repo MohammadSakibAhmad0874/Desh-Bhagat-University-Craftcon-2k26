@@ -766,16 +766,18 @@ function showRegistrationSuccess(data) {
    4. SCROLL REVEAL OBSERVER & INTERACTIVE ANIMATIONS
    ========================================================================== */
 function initScrollRevealObserver() {
-  const sectionHeaders = document.querySelectorAll('.section-header-centered');
-  sectionHeaders.forEach(sh => sh.classList.add('pixel-mask-reveal'));
-
-  const revealElements = document.querySelectorAll('.reveal-on-scroll');
+  const revealElements = document.querySelectorAll('.reveal-on-scroll, .section-header-centered, .pixel-mask-reveal');
   if (!revealElements.length) return;
+
+  // Set initial visibility fallback so elements are never hidden
+  revealElements.forEach(el => {
+    el.classList.add('is-visible');
+  });
 
   const observerOptions = {
     root: null,
     rootMargin: '0px 0px -50px 0px',
-    threshold: 0.08
+    threshold: 0.05
   };
 
   const revealObserver = new IntersectionObserver((entries) => {

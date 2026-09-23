@@ -976,17 +976,16 @@ footer {
 }
 
 .pixel-mask-reveal {
-  clip-path: polygon(0 0, 0 0, 0 100%, 0% 100%);
+  opacity: 1;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  transition: opacity 0.75s var(--motion-ease-out), transform 0.75s var(--motion-ease-out);
 }
 
-.reveal-on-scroll.is-visible {
+.reveal-on-scroll.is-visible,
+.pixel-mask-reveal.is-visible {
   opacity: 1;
   transform: translateY(0) scale(1);
   filter: blur(0);
-}
-
-.pixel-mask-reveal.is-visible {
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
 }
 
 /* Stagger Delays for Cards & Items */
