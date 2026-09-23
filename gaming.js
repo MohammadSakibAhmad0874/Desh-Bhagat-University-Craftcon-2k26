@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initGameDetailsModal();
   initCentralizedRegistrationWizard();
   initScrollRevealObserver();
-  initSectionPanelTransitions();
   initHeroParallax();
   initCardTiltPhysics();
   initThreeJSScene();
@@ -815,32 +814,6 @@ function initScrollRevealObserver() {
   }, { threshold: 0.3 });
 
   sections.forEach(sec => spyObserver.observe(sec));
-}
-
-/* ==========================================================================
-   DECORATIVE FADED LEFT/RIGHT PANEL SECTION REVEAL CONTROLLER
-   ========================================================================== */
-function initSectionPanelTransitions() {
-  const panelSections = document.querySelectorAll('.section-transition-panel');
-  if (!panelSections.length) return;
-
-  const panelObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('revealed');
-      }
-    });
-  }, {
-    root: null,
-    threshold: 0.15
-  });
-
-  panelSections.forEach(sec => {
-    panelObserver.observe(sec);
-    if (sec.getAttribute('id') === 'hero') {
-      sec.classList.add('revealed');
-    }
-  });
 }
 
 function initCardTiltPhysics() {
