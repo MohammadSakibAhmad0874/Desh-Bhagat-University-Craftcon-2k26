@@ -730,27 +730,30 @@ app.post('/api/payments/submit-proof', async (req, res) => {
     }
 
     // Update Turso DB: registration_status = 'PAYMENT_SUBMITTED', payment_status = 'SUBMITTED'
-    await db.batch([
-      {
-        sql: `UPDATE registrations 
-              SET payment_method = 'UPI',
-                  payment_status = 'SUBMITTED',
-                  registration_status = 'PAYMENT_SUBMITTED',
-                  utr_transaction_id = ?,
-                  payment_screenshot_url = ?,
-                  submitted_at = CURRENT_TIMESTAMP,
-                  updated_at = CURRENT_TIMESTAMP
-              WHERE registration_id = ?`,
-        args: [cleanUtr, rawScreenshot, registrationId]
-      },
-      {
+    await db.execute({
+      sql: `UPDATE registrations 
+            SET payment_method = 'UPI',
+                payment_status = 'SUBMITTED',
+                registration_status = 'PAYMENT_SUBMITTED',
+                utr_transaction_id = ?,
+                payment_screenshot_url = ?,
+                submitted_at = CURRENT_TIMESTAMP,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE registration_id = ?`,
+      args: [cleanUtr, rawScreenshot, registrationId]
+    });
+
+    try {
+      await db.execute({
         sql: `INSERT OR REPLACE INTO payments (
                 registration_id, provider, method, amount, status, utr_transaction_id,
                 payment_screenshot_url, submitted_at, updated_at
               ) VALUES (?, 'UPI', 'UPI', ?, 'SUBMITTED', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
         args: [registrationId, reg.total_amount || reg.amount || 200, cleanUtr, rawScreenshot]
-      }
-    ]);
+      });
+    } catch (payErr) {
+      console.warn('⚠️ [Payments Table Notice]:', payErr.message);
+    }
 
     console.log(`📥 [UPI Payment Proof Submitted] Reg ID: ${registrationId}, UTR: ${cleanUtr}`);
 
@@ -772,8 +775,11 @@ app.post('/api/payments/submit-proof', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error in /api/payments/submit-proof:', error);
-    return res.status(500).json({ success: false, error: 'Failed to submit payment proof.' });
+    console.error('❌ Error in /api/payments/submit-proof:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: `Failed to submit payment proof: ${error.message || 'Database or server error'}` 
+    });
   }
 });
 
