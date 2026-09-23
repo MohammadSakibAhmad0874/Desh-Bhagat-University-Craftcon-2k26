@@ -424,7 +424,9 @@ function initCentralizedRegistrationWizard() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             registrationId: wizardState.registrationId,
+            utr: utrValue,
             utrTransactionId: utrValue,
+            screenshot: currentBase64Screenshot,
             paymentScreenshotUrl: currentBase64Screenshot
           })
         });

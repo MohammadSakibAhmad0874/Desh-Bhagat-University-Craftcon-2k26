@@ -674,13 +674,15 @@ app.post(['/api/payments/verify', '/api/payment/verify'], async (req, res) => {
 // 5.5 SUBMIT UPI PAYMENT PROOF (UTR + SCREENSHOT)
 app.post('/api/payments/submit-proof', async (req, res) => {
   try {
-    const { registrationId, utr, screenshot } = req.body;
+    const registrationId = req.body.registrationId || req.body.registration_id;
+    const rawUtr = req.body.utr || req.body.utrTransactionId || req.body.utr_transaction_id || '';
+    const rawScreenshot = req.body.screenshot || req.body.paymentScreenshotUrl || req.body.screenshotUrl || '';
 
     if (!registrationId) {
       return res.status(400).json({ success: false, error: 'Registration ID is required.' });
     }
 
-    const cleanUtr = (utr || '').trim();
+    const cleanUtr = rawUtr.trim();
     if (!cleanUtr || cleanUtr.length < 6 || cleanUtr.length > 35) {
       return res.status(400).json({
         success: false,
@@ -688,7 +690,7 @@ app.post('/api/payments/submit-proof', async (req, res) => {
       });
     }
 
-    if (!screenshot || typeof screenshot !== 'string' || !screenshot.startsWith('data:image/')) {
+    if (!rawScreenshot || typeof rawScreenshot !== 'string' || !rawScreenshot.startsWith('data:image/')) {
       return res.status(400).json({
         success: false,
         error: 'A valid payment screenshot (JPG, PNG, or WEBP image file) is required.'
@@ -739,14 +741,14 @@ app.post('/api/payments/submit-proof', async (req, res) => {
                   submitted_at = CURRENT_TIMESTAMP,
                   updated_at = CURRENT_TIMESTAMP
               WHERE registration_id = ?`,
-        args: [cleanUtr, screenshot, registrationId]
+        args: [cleanUtr, rawScreenshot, registrationId]
       },
       {
         sql: `INSERT OR REPLACE INTO payments (
                 registration_id, provider, method, amount, status, utr_transaction_id,
                 payment_screenshot_url, submitted_at, updated_at
               ) VALUES (?, 'UPI', 'UPI', ?, 'SUBMITTED', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-        args: [registrationId, reg.total_amount || reg.amount || 200, cleanUtr, screenshot]
+        args: [registrationId, reg.total_amount || reg.amount || 200, cleanUtr, rawScreenshot]
       }
     ]);
 
