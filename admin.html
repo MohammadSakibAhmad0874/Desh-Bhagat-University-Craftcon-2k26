@@ -179,6 +179,9 @@
         <a href="gaming.html" class="btn-gaming-secondary" style="padding:8px 16px; font-size:0.85rem;">
           <span>🎮 ARENA PORTAL</span>
         </a>
+        <button id="btn-sync-sheets" class="pill-cta-btn" style="background:var(--gaming-cyan); border-color:var(--gaming-cyan); color:#000; font-weight:700;">
+          <span>🔄 SYNC GOOGLE SHEETS</span>
+        </button>
         <button id="btn-export-csv" class="pill-cta-btn" style="background:var(--color-amber); border-color:var(--color-amber-bright);">
           <span>📥 EXPORT CSV</span>
         </button>
@@ -308,6 +311,7 @@
       document.getElementById('filter-category').addEventListener('change', applyFilters);
       document.getElementById('filter-payment').addEventListener('change', applyFilters);
       document.getElementById('btn-export-csv').addEventListener('click', exportToCSV);
+      document.getElementById('btn-sync-sheets').addEventListener('click', handleSyncGoogleSheets);
 
       document.getElementById('close-squad-modal-btn').addEventListener('click', () => {
         document.getElementById('squad-details-modal').classList.remove('active');
@@ -317,6 +321,25 @@
         document.getElementById('proof-details-modal').classList.remove('active');
       });
     });
+
+    async function handleSyncGoogleSheets() {
+      const btn = document.getElementById('btn-sync-sheets');
+      try {
+        if (btn) btn.innerHTML = '<span>⏳ SYNCING SHEETS...</span>';
+        const res = await fetch('/api/admin/sync-sheets', { method: 'POST' });
+        const data = await res.json();
+        if (data.success) {
+          alert(`Google Sheets Sync Completed! Synced ${data.total || 0} registration(s).`);
+          fetchAdminRegistrations();
+        } else {
+          alert(`Sync Notice: ${data.error || 'Check server environment variables (GOOGLE_SHEETS_SPREADSHEET_ID).'}`);
+        }
+      } catch (e) {
+        alert('Network error while triggering Google Sheets sync.');
+      } finally {
+        if (btn) btn.innerHTML = '<span>🔄 SYNC GOOGLE SHEETS</span>';
+      }
+    }
 
     async function fetchAdminRegistrations() {
       try {

@@ -757,8 +757,13 @@ app.post('/api/payments/submit-proof', async (req, res) => {
 
     console.log(`📥 [UPI Payment Proof Submitted] Reg ID: ${registrationId}, UTR: ${cleanUtr}`);
 
-    // Send immediate email to user: "Payment Details Received — Pending Verification"
+    // Send immediate email to user and sync row to Google Sheets in background
     setImmediate(async () => {
+      try {
+        await googleSheetsService.syncConfirmedRegistration(registrationId);
+      } catch (gsErr) {
+        console.warn('⚠️ [Google Sheets Sync Notice]:', gsErr.message);
+      }
       try {
         await emailService.sendPaymentProofSubmittedEmail(registrationId);
       } catch (emErr) {

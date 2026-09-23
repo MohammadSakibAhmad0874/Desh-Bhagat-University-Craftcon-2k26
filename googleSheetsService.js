@@ -186,10 +186,10 @@ async function syncConfirmedRegistration(registrationId) {
 
     const reg = regRes.rows[0];
 
-    // Only export VERIFIED / CONFIRMED registrations with paid status
-    if (reg.registration_status !== 'CONFIRMED' && reg.payment_status !== 'PAID' && reg.payment_status !== 'CAPTURED') {
-      console.log(`ℹ️ [GoogleSheets] Skipping sync for unconfirmed registration ${registrationId} (${reg.registration_status}/${reg.payment_status})`);
-      return { success: false, error: 'Registration is not confirmed.' };
+    // Allow exporting all active registrations (PENDING_PAYMENT, PAYMENT_SUBMITTED, SUBMITTED, PAID, CONFIRMED)
+    if (reg.registration_status === 'CANCELLED') {
+      console.log(`ℹ️ [GoogleSheets] Skipping sync for cancelled registration ${registrationId}`);
+      return { success: false, error: 'Registration is cancelled.' };
     }
 
     // Fetch players roster from Turso
@@ -329,12 +329,11 @@ async function syncAllPendingRegistrations() {
   try {
     const pendingRes = await db.execute(`
       SELECT registration_id FROM registrations 
-      WHERE registration_status = 'CONFIRMED' 
-        AND (google_sheets_sync_status = 'PENDING' OR google_sheets_sync_status = 'FAILED' OR google_sheets_sync_status IS NULL)
+      WHERE (google_sheets_sync_status = 'PENDING' OR google_sheets_sync_status = 'FAILED' OR google_sheets_sync_status IS NULL)
     `);
 
     const rows = pendingRes.rows || [];
-    console.log(`🔄 [GoogleSheets Sync Retry] Found ${rows.length} confirmed registrations to sync...`);
+    console.log(`🔄 [GoogleSheets Sync Retry] Found ${rows.length} registrations to sync...`);
 
     const results = [];
     for (const row of rows) {
