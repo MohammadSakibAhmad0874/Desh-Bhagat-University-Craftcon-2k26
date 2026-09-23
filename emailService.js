@@ -309,8 +309,81 @@ async function sendRegistrationConfirmation(registrationId) {
   }
 }
 
+/**
+ * Sends notification when user submits payment proof (Pending Verification)
+ */
+async function sendPaymentProofSubmittedEmail(registrationId) {
+  try {
+    if (!db) return { success: false, error: 'Database client not ready' };
+
+    const regRes = await db.execute({
+      sql: 'SELECT * FROM registrations WHERE registration_id = ?',
+      args: [registrationId]
+    });
+    const reg = regRes.rows && regRes.rows.length > 0 ? regRes.rows[0] : null;
+    if (!reg) return { success: false, error: 'Registration not found' };
+
+    const fromAddress = process.env.EMAIL_FROM || 'CRAFTCON 2K26 <no-reply@craftcon2026.edu>';
+    const toAddress = reg.captain_email;
+
+    const htmlContent = `
+      <div style="max-width:600px; margin:20px auto; background-color:#12121c; border:2px solid #f5a623; border-radius:12px; padding:25px; color:#ffffff; font-family:sans-serif;">
+        <h2 style="color:#f5a623; margin-top:0;">📋 PAYMENT PROOF RECEIVED</h2>
+        <p>Dear <strong>${reg.captain_name}</strong>,</p>
+        <p>We have received your payment proof for <strong>${reg.game}</strong>.</p>
+        <div style="background:rgba(245,166,35,0.1); border:1px dashed #f5a623; padding:15px; border-radius:8px; margin:15px 0;">
+          <div><strong>Registration ID:</strong> ${reg.registration_id}</div>
+          <div><strong>UTR / Transaction ID:</strong> ${reg.utr_transaction_id || 'Submitted'}</div>
+          <div><strong>Amount Payable:</strong> ₹${reg.total_amount || reg.amount} INR</div>
+          <div><strong>Status:</strong> <span style="color:#f5a623; font-weight:bold;">PENDING VERIFICATION</span></div>
+        </div>
+        <p style="color:#94a3b8; font-size:14px;">
+          Our organizing team will verify your UTR and payment screenshot against the bank statement. You will receive your official <strong>Registration Confirmed Pass</strong> as soon as verification is complete.
+        </p>
+        <p style="color:#64748b; font-size:12px; margin-top:20px;">
+          &copy; 2026 CRAFTCON Gaming Arena • Desh Bhagat University
+        </p>
+      </div>
+    `;
+
+    const textContent = `
+CRAFTCON 2K26 GAMING ARENA — PAYMENT PROOF RECEIVED
+
+Dear ${reg.captain_name},
+
+Your payment proof for ${reg.game} has been received.
+
+Registration ID: ${reg.registration_id}
+UTR / Transaction ID: ${reg.utr_transaction_id || 'Submitted'}
+Amount: ₹${reg.total_amount || reg.amount} INR
+Status: PENDING VERIFICATION
+
+Our team is verifying your payment. Your official confirmed pass will be emailed once verified.
+`;
+
+    const transporter = await getTransporter();
+    if (transporter) {
+      await transporter.sendMail({
+        from: fromAddress,
+        to: toAddress,
+        subject: `CRAFTCON 2K26 — Payment Proof Received (${reg.registration_id})`,
+        html: htmlContent,
+        text: textContent
+      });
+      console.log(`✉️ Payment proof submission email sent to ${toAddress} for ${registrationId}`);
+    } else {
+      console.log(`✉️ [MOCK EMAIL] Payment proof submission email sent to ${toAddress} for ${registrationId}`);
+    }
+    return { success: true };
+  } catch (err) {
+    console.warn(`⚠️ Failed to send payment proof submitted email for ${registrationId}:`, err.message);
+    return { success: false, error: err.message };
+  }
+}
+
 module.exports = {
   sendRegistrationConfirmation,
+  sendPaymentProofSubmittedEmail,
   buildHtmlEmail,
   buildTextEmail
 };

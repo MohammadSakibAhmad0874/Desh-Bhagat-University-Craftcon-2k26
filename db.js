@@ -68,8 +68,15 @@ async function initDb() {
           amount REAL,
           fee_per_person REAL NOT NULL DEFAULT 50,
           currency TEXT DEFAULT 'INR',
+          payment_method TEXT DEFAULT 'UPI',
           payment_status TEXT NOT NULL DEFAULT 'PENDING',
-          registration_status TEXT NOT NULL DEFAULT 'PENDING',
+          registration_status TEXT NOT NULL DEFAULT 'PENDING_PAYMENT',
+          utr_transaction_id TEXT,
+          payment_screenshot_url TEXT,
+          submitted_at DATETIME,
+          verified_at DATETIME,
+          verified_by TEXT,
+          verification_notes TEXT,
           razorpay_order_id TEXT,
           razorpay_payment_id TEXT,
           order_id TEXT,
@@ -117,11 +124,16 @@ async function initDb() {
           payment_id TEXT,
           amount REAL NOT NULL,
           currency TEXT DEFAULT 'INR',
-          status TEXT NOT NULL DEFAULT 'CREATED',
-          method TEXT DEFAULT 'RAZORPAY',
-          provider TEXT NOT NULL DEFAULT 'RAZORPAY',
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          status TEXT NOT NULL DEFAULT 'PENDING',
+          method TEXT DEFAULT 'UPI',
+          provider TEXT NOT NULL DEFAULT 'UPI',
+          utr_transaction_id TEXT,
+          payment_screenshot_url TEXT,
+          submitted_at DATETIME,
           verified_at DATETIME,
+          verified_by TEXT,
+          verification_notes TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
         );
       `);
@@ -129,18 +141,32 @@ async function initDb() {
       // Run Column Migrations for Existing Tables
       await ensureColumnExists('registrations', 'amount', 'REAL');
       await ensureColumnExists('registrations', 'currency', "TEXT DEFAULT 'INR'");
+      await ensureColumnExists('registrations', 'payment_method', "TEXT DEFAULT 'UPI'");
+      await ensureColumnExists('registrations', 'utr_transaction_id', 'TEXT');
+      await ensureColumnExists('registrations', 'payment_screenshot_url', 'TEXT');
+      await ensureColumnExists('registrations', 'submitted_at', 'DATETIME');
+      await ensureColumnExists('registrations', 'verified_at', 'DATETIME');
+      await ensureColumnExists('registrations', 'verified_by', 'TEXT');
+      await ensureColumnExists('registrations', 'verification_notes', 'TEXT');
       await ensureColumnExists('registrations', 'updated_at', 'DATETIME');
       await ensureColumnExists('registrations', 'google_sheets_sync_status', "TEXT DEFAULT 'PENDING'");
       await ensureColumnExists('registrations', 'google_sheets_synced_at', 'DATETIME');
       await ensureColumnExists('registrations', 'google_sheets_sync_error', 'TEXT');
       await ensureColumnExists('players', 'full_name', 'TEXT');
       await ensureColumnExists('payments', 'signature', 'TEXT');
+      await ensureColumnExists('payments', 'utr_transaction_id', 'TEXT');
+      await ensureColumnExists('payments', 'payment_screenshot_url', 'TEXT');
+      await ensureColumnExists('payments', 'submitted_at', 'DATETIME');
+      await ensureColumnExists('payments', 'verified_by', 'TEXT');
+      await ensureColumnExists('payments', 'verification_notes', 'TEXT');
       await ensureColumnExists('payments', 'updated_at', 'DATETIME');
 
       // Create Idempotency Unique Indexes
       try {
         await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_reg_rzp_pay ON registrations(razorpay_payment_id) WHERE razorpay_payment_id IS NOT NULL;");
         await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_pay_rzp_pay ON payments(razorpay_payment_id) WHERE razorpay_payment_id IS NOT NULL;");
+        await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_reg_utr ON registrations(utr_transaction_id) WHERE utr_transaction_id IS NOT NULL;");
+        await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_pay_utr ON payments(utr_transaction_id) WHERE utr_transaction_id IS NOT NULL;");
       } catch (idxErr) {
         console.warn('Index creation notice:', idxErr.message);
       }

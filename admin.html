@@ -252,7 +252,7 @@
             <th>REGISTRATION ID</th>
             <th>GAME & TYPE</th>
             <th>TEAM / NAME</th>
-            <th>COLLEGE</th>
+            <th>UTR / PROOF</th>
             <th>CAPTAIN & CONTACT</th>
             <th>PLAYERS</th>
             <th>AMOUNT</th>
@@ -282,6 +282,21 @@
     </div>
   </div>
 
+  <!-- PAYMENT PROOF & VERIFICATION MODAL -->
+  <div class="gaming-modal-overlay" id="proof-details-modal">
+    <div class="gaming-modal-container" style="max-width:580px;">
+      <div class="wizard-header">
+        <h3 class="wizard-title" id="proof-modal-title">PAYMENT PROOF VERIFICATION</h3>
+        <button class="modal-close-btn" id="close-proof-modal-btn">&times;</button>
+      </div>
+      <div class="wizard-body">
+        <div id="proof-modal-content">
+          <!-- Proof content -->
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     let allRegistrations = [];
 
@@ -296,6 +311,10 @@
 
       document.getElementById('close-squad-modal-btn').addEventListener('click', () => {
         document.getElementById('squad-details-modal').classList.remove('active');
+      });
+
+      document.getElementById('close-proof-modal-btn').addEventListener('click', () => {
+        document.getElementById('proof-details-modal').classList.remove('active');
       });
     });
 
@@ -344,6 +363,7 @@
           (r.team_name && r.team_name.toLowerCase().includes(search)) ||
           r.captain_name.toLowerCase().includes(search) ||
           r.captain_email.toLowerCase().includes(search) ||
+          (r.utr_transaction_id && r.utr_transaction_id.toLowerCase().includes(search)) ||
           r.college.toLowerCase().includes(search);
 
         const matchGame = !game || r.game === game;
@@ -367,11 +387,17 @@
 
       rows.forEach(r => {
         const tr = document.createElement('tr');
+        const hasProof = Boolean(r.payment_screenshot_url || r.utr_transaction_id);
+        const isPaid = r.payment_status === 'PAID';
+
         tr.innerHTML = `
           <td style="font-family:'Silkscreen', monospace; font-size:0.82rem; color:var(--color-amber);">${r.registration_id}</td>
           <td><strong style="color:var(--text-white);">${r.game}</strong><br><span style="font-size:0.75rem; color:var(--text-dim); text-transform:uppercase;">${r.category} • ${r.registration_type}</span></td>
           <td style="font-weight:600; color:var(--text-white);">${r.team_name || r.captain_name}</td>
-          <td>${r.college}</td>
+          <td>
+            ${r.utr_transaction_id ? `<span style="font-family:monospace; font-size:0.8rem; color:var(--color-amber-bright); font-weight:700;">${r.utr_transaction_id}</span>` : '<span style="color:var(--text-dim); font-size:0.78rem;">NO UTR</span>'}
+            ${hasProof ? `<br><button class="btn-action-sm" style="margin-top:4px; padding:2px 8px; font-size:0.72rem; background:rgba(245,166,35,0.15); border-color:var(--color-amber); color:var(--color-amber-bright);" onclick="viewPaymentProof('${r.registration_id}')">🔍 PROOF</button>` : ''}
+          </td>
           <td>
             <div style="font-weight:600;">${r.captain_name}</div>
             <div style="font-size:0.78rem; color:var(--text-dim);">${r.captain_email} | ${r.captain_phone}</div>
@@ -379,16 +405,85 @@
           <td style="font-family:'Silkscreen', monospace; color:var(--color-green-bright);">${r.player_count} Player(s)</td>
           <td style="font-family:'Silkscreen', monospace; font-weight:700; color:var(--color-green-bright);">₹${r.total_amount}</td>
           <td>
-            <span class="${r.payment_status === 'PAID' ? 'badge-status-paid' : 'badge-status-pending'}">
+            <span class="${isPaid ? 'badge-status-paid' : 'badge-status-pending'}">
               ${r.payment_status}
             </span>
           </td>
           <td>
-            <button class="btn-action-sm" onclick="viewSquadRoster('${r.registration_id}')">ROSTER</button>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <button class="btn-action-sm" onclick="viewSquadRoster('${r.registration_id}')">ROSTER</button>
+              ${!isPaid ? `
+                <button class="btn-action-sm" style="background:rgba(112,224,0,0.2); border-color:var(--mc-xp-green); color:var(--color-green-bright);" onclick="handleVerifyPayment('${r.registration_id}', 'VERIFY')">VERIFY</button>
+                <button class="btn-action-sm" style="background:rgba(255,0,84,0.2); border-color:var(--color-purple-bright); color:#ff4d6d;" onclick="handleVerifyPayment('${r.registration_id}', 'REJECT')">REJECT</button>
+              ` : ''}
+            </div>
           </td>
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    function viewPaymentProof(regId) {
+      const reg = allRegistrations.find(r => r.registration_id === regId);
+      if (!reg) return;
+
+      const title = document.getElementById('proof-modal-title');
+      const content = document.getElementById('proof-modal-content');
+      title.textContent = `PROOF: ${reg.registration_id}`;
+
+      content.innerHTML = `
+        <div style="margin-bottom:14px; padding:12px; background:var(--bg-deep); border-radius:6px; font-size:0.9rem;">
+          <div style="margin-bottom:6px;"><strong style="color:var(--color-amber);">Team / Captain:</strong> ${reg.team_name} (${reg.captain_name})</div>
+          <div style="margin-bottom:6px;"><strong style="color:var(--color-amber);">UTR / Trans ID:</strong> <span style="font-family:monospace; font-weight:700; color:var(--color-green-bright);">${reg.utr_transaction_id || 'N/A'}</span></div>
+          <div style="margin-bottom:6px;"><strong style="color:var(--color-amber);">Amount Payable:</strong> ₹${reg.total_amount}</div>
+          <div><strong style="color:var(--color-amber);">Submitted At:</strong> ${reg.submitted_at || reg.created_at}</div>
+        </div>
+
+        ${reg.payment_screenshot_url ? `
+          <div style="text-align:center; margin-bottom:16px;">
+            <div style="font-size:0.75rem; color:var(--text-dim); margin-bottom:6px; text-transform:uppercase;">UPLOADED SCREENSHOT</div>
+            <img src="${reg.payment_screenshot_url}" alt="Payment Proof Screenshot" style="max-width:100%; max-height:320px; border-radius:8px; border:1px solid var(--gaming-border); object-fit:contain;">
+          </div>
+        ` : '<div style="color:var(--text-muted); text-align:center; padding:20px;">No screenshot image uploaded.</div>'}
+
+        <div style="display:flex; gap:12px; margin-top:16px;">
+          <button class="btn-action-sm" style="flex:1; padding:10px; font-weight:700; background:var(--color-green); border-color:var(--mc-xp-green); color:#fff;" onclick="handleVerifyPayment('${reg.registration_id}', 'VERIFY')">✓ VERIFY PAYMENT</button>
+          <button class="btn-action-sm" style="flex:1; padding:10px; font-weight:700; background:#ff0054; border-color:#ff4d6d; color:#fff;" onclick="handleVerifyPayment('${reg.registration_id}', 'REJECT')">✕ REJECT PAYMENT</button>
+        </div>
+      `;
+
+      document.getElementById('proof-details-modal').classList.add('active');
+    }
+
+    async function handleVerifyPayment(regId, action) {
+      const confirmMsg = action === 'VERIFY' 
+        ? `Confirm payment for ${regId}? This will update status to PAID, generate pass, send confirmation email, and sync to Google Sheets.`
+        : `Reject payment for ${regId}?`;
+
+      if (!confirm(confirmMsg)) return;
+
+      try {
+        const res = await fetch('/api/admin/verify-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            registrationId: regId,
+            action: action,
+            verifiedBy: 'Admin Portal'
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert(`Registration ${regId} payment ${action === 'VERIFY' ? 'VERIFIED & CONFIRMED' : 'REJECTED'} successfully!`);
+          const proofModal = document.getElementById('proof-details-modal');
+          if (proofModal) proofModal.classList.remove('active');
+          fetchAdminRegistrations();
+        } else {
+          alert(`Action failed: ${data.error || 'Server error'}`);
+        }
+      } catch (err) {
+        alert('Network error while processing verification action.');
+      }
     }
 
     async function viewSquadRoster(regId) {

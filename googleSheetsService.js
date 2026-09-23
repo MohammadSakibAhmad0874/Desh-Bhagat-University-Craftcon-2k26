@@ -25,9 +25,13 @@ const REGISTRATIONS_HEADERS = [
   'Player Count',
   'Amount',
   'Currency',
+  'Payment Method',
   'Payment Status',
-  'Razorpay Order ID',
-  'Razorpay Payment ID',
+  'UTR / Transaction ID',
+  'Payment Screenshot',
+  'Submitted At',
+  'Verified At',
+  'Verified By',
   'Registration Status',
   'Created At',
   'Confirmed At'
@@ -237,9 +241,13 @@ async function syncConfirmedRegistration(registrationId) {
       reg.player_count || 4,
       reg.total_amount || reg.amount || 200,
       reg.currency || 'INR',
-      reg.payment_status || 'CAPTURED',
-      reg.razorpay_order_id || reg.order_id || '',
-      reg.razorpay_payment_id || reg.payment_id || '',
+      reg.payment_method || 'UPI',
+      reg.payment_status || 'VERIFIED',
+      reg.utr_transaction_id || reg.razorpay_payment_id || 'N/A',
+      reg.payment_screenshot_url ? 'Screenshot Uploaded' : 'N/A',
+      String(reg.submitted_at || ''),
+      String(reg.verified_at || ''),
+      reg.verified_by || 'Admin',
       reg.registration_status || 'CONFIRMED',
       String(reg.created_at || new Date().toISOString()),
       String(reg.confirmed_at || new Date().toISOString())
@@ -249,7 +257,7 @@ async function syncConfirmedRegistration(registrationId) {
       console.log(`ℹ️ [GoogleSheets] Registration ${registrationId} already exists in Sheets at row ${existingRowIndex}. Updating row...`);
       await sheets.spreadsheets.values.update({
         spreadsheetId,
-        range: `Registrations!A${existingRowIndex}:S${existingRowIndex}`,
+        range: `Registrations!A${existingRowIndex}:W${existingRowIndex}`,
         valueInputOption: 'USER_ENTERED',
         requestBody: { values: [registrationRow] }
       });
@@ -257,7 +265,7 @@ async function syncConfirmedRegistration(registrationId) {
       console.log(`➕ [GoogleSheets] Appending new registration ${registrationId} to Registrations sheet...`);
       await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range: 'Registrations!A:S',
+        range: 'Registrations!A:W',
         valueInputOption: 'USER_ENTERED',
         insertDataOption: 'INSERT_ROWS',
         requestBody: { values: [registrationRow] }

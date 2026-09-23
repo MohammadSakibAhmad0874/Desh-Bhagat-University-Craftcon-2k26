@@ -187,7 +187,31 @@ let wizardState = {
   paymentId: null
 };
 
+let systemConfig = {
+  paymentProvider: 'upi',
+  upiQrUrl: '/assets/images/upi_qr.png',
+  upiId: 'paytm.s2sp1kq@pty'
+};
+
+let currentBase64Screenshot = null;
+
+async function fetchSystemConfig() {
+  try {
+    const res = await fetch('/api/config');
+    const data = await res.json();
+    if (data.success) {
+      systemConfig.paymentProvider = (data.paymentProvider || 'upi').toLowerCase().trim();
+      systemConfig.upiQrUrl = data.upiQrUrl || '/assets/images/upi_qr.png';
+      systemConfig.upiId = data.upiId || 'paytm.s2sp1kq@pty';
+    }
+  } catch (e) {
+    console.warn('Config fetch notice:', e.message);
+  }
+}
+
 function initCentralizedRegistrationWizard() {
+  fetchSystemConfig();
+
   const modal = document.getElementById('gaming-registration-modal');
   const closeBtn = document.getElementById('close-reg-modal-btn');
   const openBtns = document.querySelectorAll('.open-gaming-reg-btn');
@@ -209,6 +233,9 @@ function initCentralizedRegistrationWizard() {
       } else {
         wizardState.step = 1;
       }
+
+      // Reset session registration ID if opening fresh
+      wizardState.registrationId = null;
 
       // Close details modal if open
       const detailsModal = document.getElementById('game-details-modal');
@@ -281,7 +308,7 @@ function initCentralizedRegistrationWizard() {
     validateAndAdvanceStep();
   });
 
-  // Step 6 Payment Action
+  // Step 6 UPI & Razorpay Controls
   const btnRazorpay = document.getElementById('btn-trigger-razorpay');
   if (btnRazorpay) {
     btnRazorpay.addEventListener('click', () => {
@@ -289,11 +316,113 @@ function initCentralizedRegistrationWizard() {
     });
   }
 
-  const btnStep6Back = document.getElementById('btn-step6-back') || document.getElementById('btn-step5-back');
-  if (btnStep6Back) {
-    btnStep6Back.addEventListener('click', () => {
-      wizardState.step = 5;
-      renderWizardStep('prev');
+  const copyUpiBtn = document.getElementById('btn-copy-upi');
+  if (copyUpiBtn) {
+    copyUpiBtn.addEventListener('click', () => {
+      const upiText = document.getElementById('upi-id-display')?.textContent || systemConfig.upiId;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(upiText).then(() => {
+          const origText = copyUpiBtn.textContent;
+          copyUpiBtn.textContent = 'COPIED!';
+          setTimeout(() => { copyUpiBtn.textContent = origText; }, 2000);
+        });
+      }
+    });
+  }
+
+  // Screenshot input file reader
+  const screenshotInput = document.getElementById('reg-screenshot-input');
+  const previewWrap = document.getElementById('screenshot-preview-wrap');
+  const previewImg = document.getElementById('screenshot-preview-img');
+
+  if (screenshotInput) {
+    screenshotInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size exceeds maximum 5MB limit. Please select a smaller payment screenshot.');
+        screenshotInput.value = '';
+        currentBase64Screenshot = null;
+        if (previewWrap) previewWrap.style.display = 'none';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        currentBase64Screenshot = evt.target.result;
+        if (previewImg) previewImg.src = currentBase64Screenshot;
+        if (previewWrap) previewWrap.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // UPI Proof Submission Form Handler
+  const upiProofForm = document.getElementById('upi-proof-form');
+  const btnSubmitProof = document.getElementById('btn-submit-upi-proof');
+
+  if (upiProofForm) {
+    upiProofForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const utrInput = document.getElementById('reg-utr-input');
+      const utrValue = utrInput ? utrInput.value.trim() : '';
+
+      if (!utrValue || utrValue.length < 6) {
+        alert('Please enter a valid 12-digit UTR / Transaction ID.');
+        return;
+      }
+
+      if (!currentBase64Screenshot) {
+        alert('Please select and upload a clear screenshot of your payment receipt.');
+        return;
+      }
+
+      if (!wizardState.registrationId) {
+        alert('Registration record not initialized. Please go back and try again.');
+        return;
+      }
+
+      try {
+        if (btnSubmitProof) {
+          btnSubmitProof.disabled = true;
+          btnSubmitProof.innerHTML = '<span>⏳ SUBMITTING PROOF...</span>';
+        }
+
+        const res = await fetch('/api/payments/submit-proof', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            registrationId: wizardState.registrationId,
+            utrTransactionId: utrValue,
+            paymentScreenshotUrl: currentBase64Screenshot
+          })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          showRegistrationSuccess({
+            registrationId: wizardState.registrationId,
+            game: GAMES_CATALOGUE[wizardState.gameId] ? GAMES_CATALOGUE[wizardState.gameId].name : wizardState.gameId,
+            teamName: wizardState.teamName,
+            college: wizardState.college,
+            status: 'PAYMENT_SUBMITTED'
+          });
+        } else {
+          alert(`Submission error: ${data.error || 'Please check your inputs and try again.'}`);
+          if (btnSubmitProof) {
+            btnSubmitProof.disabled = false;
+            btnSubmitProof.innerHTML = '<span>📥 SUBMIT PAYMENT PROOF</span>';
+          }
+        }
+      } catch (err) {
+        console.error('Submission network error:', err);
+        alert('Network connection error while submitting payment proof. Please try again.');
+        if (btnSubmitProof) {
+          btnSubmitProof.disabled = false;
+          btnSubmitProof.innerHTML = '<span>📥 SUBMIT PAYMENT PROOF</span>';
+        }
+      }
     });
   }
 
@@ -388,17 +517,67 @@ function renderWizardStep(direction = 'next') {
   } else if (wizardState.step === 6) {
     stepTitleEl.textContent = 'PAYMENT PORTAL';
     if (footerControls) footerControls.style.display = 'none';
-    const payAmountEl = document.getElementById('pay-amount-display');
-    const payRegIdEl = document.getElementById('pay-reg-id-display');
-    if (payAmountEl) payAmountEl.textContent = `₹${wizardState.totalAmount}`;
-    if (payRegIdEl) payRegIdEl.textContent = `GAME: ${wizardState.gameId} • SQUAD OF ${wizardState.playerCount}`;
+    prepareStep6Payment();
   } else if (wizardState.step === 7) {
-    stepTitleEl.textContent = 'REGISTRATION SUCCESS';
+    stepTitleEl.textContent = 'REGISTRATION SUBMITTED';
     if (footerControls) footerControls.style.display = 'none';
   }
 
   if (wizardState.step <= 5 && footerControls) {
     footerControls.style.display = 'flex';
+  }
+}
+
+async function prepareStep6Payment() {
+  const upiSection = document.getElementById('upi-payment-section');
+  const razorpaySection = document.getElementById('razorpay-payment-section');
+  const qrImageEl = document.getElementById('upi-qr-image');
+  const upiIdDisplayEl = document.getElementById('upi-id-display');
+  const payAmountEl = document.getElementById('pay-amount-display');
+  const payRegIdEl = document.getElementById('pay-reg-id-display');
+
+  if (payAmountEl) payAmountEl.textContent = `₹${wizardState.totalAmount}`;
+
+  // 1. Create PENDING registration in Turso DB if not already created for this session
+  if (!wizardState.registrationId) {
+    try {
+      const createRes = await fetch('/api/registrations/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          gameId: wizardState.gameId,
+          teamName: wizardState.teamName,
+          college: wizardState.college,
+          captain: wizardState.captain,
+          players: wizardState.players
+        })
+      });
+      const createData = await createRes.json();
+      if (createData.success) {
+        wizardState.registrationId = createData.registrationId;
+      } else {
+        alert(createData.error || 'Failed to initialize registration record.');
+        return;
+      }
+    } catch (e) {
+      console.error('Error creating registration:', e);
+      alert('Network error while initializing registration.');
+      return;
+    }
+  }
+
+  if (payRegIdEl) payRegIdEl.textContent = `REGISTRATION: ${wizardState.registrationId}`;
+
+  // 2. Handle Feature Flag (upi vs razorpay)
+  if (systemConfig.paymentProvider === 'upi') {
+    if (upiSection) upiSection.style.display = 'block';
+    if (razorpaySection) razorpaySection.style.display = 'none';
+
+    if (qrImageEl) qrImageEl.src = systemConfig.upiQrUrl;
+    if (upiIdDisplayEl) upiIdDisplayEl.textContent = systemConfig.upiId;
+  } else {
+    if (upiSection) upiSection.style.display = 'none';
+    if (razorpaySection) razorpaySection.style.display = 'block';
   }
 }
 

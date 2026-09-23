@@ -181,6 +181,20 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// 1.5 SYSTEM CONFIGURATION ENDPOINT
+app.get('/api/config', (req, res) => {
+  const paymentProvider = (process.env.PAYMENT_PROVIDER || 'upi').toLowerCase().trim();
+  const upiQrUrl = process.env.UPI_PAYMENT_QR_URL || '/assets/images/upi_qr.png';
+  const upiId = process.env.UPI_ID || 'paytm.s2sp1kq@pty';
+
+  res.json({
+    success: true,
+    paymentProvider,
+    upiQrUrl,
+    upiId
+  });
+});
+
 // 2. GET GAMES CATALOGUE ENDPOINT
 app.get('/api/games', (req, res) => {
   res.json({
@@ -190,7 +204,7 @@ app.get('/api/games', (req, res) => {
   });
 });
 
-// 3. REGISTRATION PRICING & VALIDATION CHECK (NO DB INSERT BEFORE PAYMENT)
+// 3. REGISTRATION CREATION & INITIAL DATABASE PENDING RECORD
 app.post('/api/registrations/create', async (req, res) => {
   try {
     const { gameId, teamName, college, captain, players } = req.body;
@@ -223,21 +237,91 @@ app.post('/api/registrations/create', async (req, res) => {
     const feePerPerson = 50;
     const totalAmount = requiredPlayerCount * feePerPerson;
 
+    const paymentProvider = (process.env.PAYMENT_PROVIDER || 'upi').toLowerCase().trim();
+
+    // Generate canonical Registration ID
+    const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
+    const registrationId = `CRAFT26-${gameConfig.id}-${randomHex}`;
+
+    const cleanCollege = college.trim();
+    const cleanTeamName = gameConfig.type === 'squad' 
+      ? teamName.trim() 
+      : `Solo: ${captain.name.trim()}`;
+
+    // Create initial record in Turso DB as PENDING_PAYMENT
+    await db.batch([
+      {
+        sql: `INSERT INTO registrations (
+          registration_id, category, game, registration_type, team_name,
+          college, captain_name, captain_email, captain_phone, player_count,
+          total_amount, amount, fee_per_person, currency, payment_method, payment_status, registration_status,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'INR', ?, 'PENDING', 'PENDING_PAYMENT', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+        args: [
+          registrationId,
+          gameConfig.category,
+          gameConfig.id,
+          gameConfig.type,
+          cleanTeamName,
+          cleanCollege,
+          captain.name.trim(),
+          captain.email.trim(),
+          captain.phone.trim(),
+          requiredPlayerCount,
+          totalAmount,
+          totalAmount,
+          feePerPerson,
+          paymentProvider.toUpperCase()
+        ]
+      }
+    ]);
+
+    // Insert Player Roster into Turso
+    const playerStatements = providedPlayers.slice(0, requiredPlayerCount).map((player, idx) => ({
+      sql: `INSERT INTO players (registration_id, player_index, name, full_name, in_game_name, game_uid, email, phone, role)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      args: [
+        registrationId,
+        idx + 1,
+        (player.name || captain.name).trim(),
+        (player.name || captain.name).trim(),
+        (player.inGameName || player.ign || 'N/A').trim(),
+        (player.gameUid || player.uid || 'N/A').trim(),
+        (player.email || captain.email).trim(),
+        (player.phone || captain.phone).trim(),
+        idx === 0 ? 'CAPTAIN' : `PLAYER_${idx + 1}`
+      ]
+    }));
+
+    await db.batch(playerStatements);
+
+    console.log(`📝 [Registration Created in Turso] Reg ID: ${registrationId} (${gameConfig.name}) Total: ₹${totalAmount}`);
+
     res.json({
       success: true,
+      registrationId,
       game: gameConfig.name,
+      gameId: gameConfig.id,
       category: gameConfig.category,
       registrationType: gameConfig.type,
+      teamName: cleanTeamName,
+      college: cleanCollege,
+      captain: {
+        name: captain.name.trim(),
+        email: captain.email.trim(),
+        phone: captain.phone.trim()
+      },
       playerCount: requiredPlayerCount,
       feePerPerson,
       totalAmount,
       amount: totalAmount,
-      currency: 'INR'
+      currency: 'INR',
+      paymentProvider
     });
 
   } catch (error) {
     console.error('Server error in /api/registrations/create:', error);
-    res.status(500).json({ success: false, error: 'Internal server error while validating registration.' });
+    res.status(500).json({ success: false, error: 'Internal server error while creating registration.' });
   }
 });
 
@@ -585,6 +669,232 @@ app.post(['/api/payments/verify', '/api/payment/verify'], async (req, res) => {
   }
 });
 
+// 5.5 SUBMIT UPI PAYMENT PROOF (UTR + SCREENSHOT)
+app.post('/api/payments/submit-proof', async (req, res) => {
+  try {
+    const { registrationId, utr, screenshot } = req.body;
+
+    if (!registrationId) {
+      return res.status(400).json({ success: false, error: 'Registration ID is required.' });
+    }
+
+    const cleanUtr = (utr || '').trim();
+    if (!cleanUtr || cleanUtr.length < 6 || cleanUtr.length > 35) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please enter a valid 12-digit UTR or Transaction ID (minimum 6 characters).'
+      });
+    }
+
+    if (!screenshot || typeof screenshot !== 'string' || !screenshot.startsWith('data:image/')) {
+      return res.status(400).json({
+        success: false,
+        error: 'A valid payment screenshot (JPG, PNG, or WEBP image file) is required.'
+      });
+    }
+
+    if (screenshot.length > 8 * 1024 * 1024) {
+      return res.status(400).json({
+        success: false,
+        error: 'Payment screenshot image file size is too large. Please upload an image under 5MB.'
+      });
+    }
+
+    // Fetch registration from Turso DB
+    const regRes = await db.execute({
+      sql: 'SELECT * FROM registrations WHERE registration_id = ?',
+      args: [registrationId]
+    });
+
+    if (!regRes.rows || regRes.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Registration record not found.' });
+    }
+
+    const reg = regRes.rows[0];
+
+    // Check Duplicate UTR (prevent same UTR on different registrations)
+    const duplicateUtrRes = await db.execute({
+      sql: 'SELECT registration_id FROM registrations WHERE utr_transaction_id = ? AND registration_id != ?',
+      args: [cleanUtr, registrationId]
+    });
+
+    if (duplicateUtrRes.rows && duplicateUtrRes.rows.length > 0) {
+      return res.status(400).json({
+        success: false,
+        error: `This UTR / Transaction ID (${cleanUtr}) has already been submitted for another registration.`
+      });
+    }
+
+    // Update Turso DB: registration_status = 'PAYMENT_SUBMITTED', payment_status = 'SUBMITTED'
+    await db.batch([
+      {
+        sql: `UPDATE registrations 
+              SET payment_method = 'UPI',
+                  payment_status = 'SUBMITTED',
+                  registration_status = 'PAYMENT_SUBMITTED',
+                  utr_transaction_id = ?,
+                  payment_screenshot_url = ?,
+                  submitted_at = CURRENT_TIMESTAMP,
+                  updated_at = CURRENT_TIMESTAMP
+              WHERE registration_id = ?`,
+        args: [cleanUtr, screenshot, registrationId]
+      },
+      {
+        sql: `INSERT OR REPLACE INTO payments (
+                registration_id, provider, method, amount, status, utr_transaction_id,
+                payment_screenshot_url, submitted_at, updated_at
+              ) VALUES (?, 'UPI', 'UPI', ?, 'SUBMITTED', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+        args: [registrationId, reg.total_amount || reg.amount || 200, cleanUtr, screenshot]
+      }
+    ]);
+
+    console.log(`📥 [UPI Payment Proof Submitted] Reg ID: ${registrationId}, UTR: ${cleanUtr}`);
+
+    // Send immediate email to user: "Payment Details Received — Pending Verification"
+    setImmediate(async () => {
+      try {
+        await emailService.sendPaymentProofSubmittedEmail(registrationId);
+      } catch (emErr) {
+        console.warn('⚠️ [Email Notice] Failed to send payment submitted email:', emErr.message);
+      }
+    });
+
+    return res.json({
+      success: true,
+      status: 'PAYMENT_SUBMITTED',
+      registrationId: registrationId,
+      utr: cleanUtr,
+      message: 'Payment details submitted successfully. Your registration is awaiting admin verification.'
+    });
+
+  } catch (error) {
+    console.error('Error in /api/payments/submit-proof:', error);
+    return res.status(500).json({ success: false, error: 'Failed to submit payment proof.' });
+  }
+});
+
+// 5.6 ADMIN VERIFY / REJECT PAYMENT ENDPOINT
+app.post('/api/admin/verify-payment', async (req, res) => {
+  try {
+    const { registrationId, action, notes, adminName } = req.body || {};
+
+    if (!registrationId || !action) {
+      return res.status(400).json({ success: false, error: 'Registration ID and action (VERIFY or REJECT) are required.' });
+    }
+
+    const uppercaseAction = action.toUpperCase().trim();
+    if (uppercaseAction !== 'VERIFY' && uppercaseAction !== 'REJECT') {
+      return res.status(400).json({ success: false, error: 'Action must be VERIFY or REJECT.' });
+    }
+
+    // Fetch registration from Turso DB
+    const regRes = await db.execute({
+      sql: 'SELECT * FROM registrations WHERE registration_id = ?',
+      args: [registrationId]
+    });
+
+    if (!regRes.rows || regRes.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Registration not found.' });
+    }
+
+    const reg = regRes.rows[0];
+    const verifier = (adminName || 'Admin').trim();
+    const verificationNotes = (notes || '').trim();
+
+    if (uppercaseAction === 'VERIFY') {
+      // 1. Update Turso DB to VERIFIED and CONFIRMED
+      await db.batch([
+        {
+          sql: `UPDATE registrations 
+                SET payment_status = 'VERIFIED',
+                    registration_status = 'CONFIRMED',
+                    verified_at = CURRENT_TIMESTAMP,
+                    verified_by = ?,
+                    verification_notes = ?,
+                    confirmed_at = CURRENT_TIMESTAMP,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE registration_id = ?`,
+          args: [verifier, verificationNotes, registrationId]
+        },
+        {
+          sql: `UPDATE payments
+                SET status = 'VERIFIED',
+                    verified_at = CURRENT_TIMESTAMP,
+                    verified_by = ?,
+                    verification_notes = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE registration_id = ?`,
+          args: [verifier, verificationNotes, registrationId]
+        }
+      ]);
+
+      console.log(`✅ [ADMIN VERIFIED PAYMENT] Registration ${registrationId} verified by ${verifier}.`);
+
+      // 2. Trigger Google Sheets Sync & Confirmation Email asynchronously
+      setImmediate(async () => {
+        try {
+          await googleSheetsService.syncConfirmedRegistration(registrationId);
+        } catch (gsErr) {
+          console.warn('⚠️ [GoogleSheets Sync Trigger Notice]:', gsErr.message);
+        }
+        try {
+          await emailService.sendRegistrationConfirmation(registrationId);
+        } catch (emErr) {
+          console.warn('⚠️ [Email Send Notice]:', emErr.message);
+        }
+      });
+
+      return res.json({
+        success: true,
+        status: 'CONFIRMED',
+        paymentStatus: 'VERIFIED',
+        registrationId,
+        message: `Registration ${registrationId} has been successfully verified and confirmed!`
+      });
+
+    } else {
+      // REJECT ACTION
+      await db.batch([
+        {
+          sql: `UPDATE registrations 
+                SET payment_status = 'REJECTED',
+                    registration_status = 'CANCELLED',
+                    verified_at = CURRENT_TIMESTAMP,
+                    verified_by = ?,
+                    verification_notes = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE registration_id = ?`,
+          args: [verifier, verificationNotes, registrationId]
+        },
+        {
+          sql: `UPDATE payments
+                SET status = 'REJECTED',
+                    verified_at = CURRENT_TIMESTAMP,
+                    verified_by = ?,
+                    verification_notes = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE registration_id = ?`,
+          args: [verifier, verificationNotes, registrationId]
+        }
+      ]);
+
+      console.log(`❌ [ADMIN REJECTED PAYMENT] Registration ${registrationId} rejected by ${verifier}. Reason: ${verificationNotes}`);
+
+      return res.json({
+        success: true,
+        status: 'CANCELLED',
+        paymentStatus: 'REJECTED',
+        registrationId,
+        message: `Payment for registration ${registrationId} has been rejected.`
+      });
+    }
+
+  } catch (error) {
+    console.error('Error in /api/admin/verify-payment:', error);
+    res.status(500).json({ success: false, error: 'Internal server error while verifying payment.' });
+  }
+});
+
 // 6. RAZORPAY WEBHOOK HANDLER (IDEMPOTENT & HMAC SIGNED)
 app.post('/api/webhooks/razorpay', async (req, res) => {
   try {
@@ -723,8 +1033,8 @@ app.get('/api/admin/registrations', async (req, res) => {
     }
     if (search && search.trim()) {
       const searchTerm = `%${search.trim()}%`;
-      sql += ' AND (registration_id LIKE ? OR team_name LIKE ? OR captain_name LIKE ? OR captain_email LIKE ? OR captain_phone LIKE ?)';
-      params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+      sql += ' AND (registration_id LIKE ? OR team_name LIKE ? OR captain_name LIKE ? OR captain_email LIKE ? OR captain_phone LIKE ? OR utr_transaction_id LIKE ?)';
+      params.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
     }
 
     sql += ' ORDER BY id DESC';
