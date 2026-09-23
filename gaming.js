@@ -693,8 +693,8 @@ function populateStep3Form() {
               <input type="text" id="player-${i}-ign" class="input-field-custom" required placeholder="In-Game ID">
             </div>
             <div>
-              <label class="form-label-custom">GAME UID / ID</label>
-              <input type="text" id="player-${i}-uid" class="input-field-custom" placeholder="Numeric UID">
+              <label class="form-label-custom">EMAIL ADDRESS</label>
+              <input type="email" id="player-${i}-email" class="input-field-custom" placeholder="player${i}@email.com">
             </div>
             <div>
               <label class="form-label-custom">PHONE NUMBER</label>
@@ -756,12 +756,12 @@ function validateAndAdvanceStep() {
       for (let i = 2; i <= config.minPlayers; i++) {
         const pNameEl = document.getElementById(`player-${i}-name`);
         const pIgnEl = document.getElementById(`player-${i}-ign`);
-        const pUidEl = document.getElementById(`player-${i}-uid`);
+        const pEmailEl = document.getElementById(`player-${i}-email`) || document.getElementById(`player-${i}-uid`);
         const pPhoneEl = document.getElementById(`player-${i}-phone`);
 
         const pName = pNameEl ? pNameEl.value.trim() : '';
         const pIgn = pIgnEl ? pIgnEl.value.trim() : '';
-        const pUid = pUidEl ? pUidEl.value.trim() : '';
+        const pEmail = pEmailEl ? pEmailEl.value.trim() : '';
         const pPhone = pPhoneEl ? pPhoneEl.value.trim() : '';
 
         if (!pName || !pIgn) {
@@ -772,7 +772,8 @@ function validateAndAdvanceStep() {
         wizardState.players.push({
           name: pName,
           inGameName: pIgn,
-          gameUid: pUid,
+          email: pEmail,
+          gameUid: pEmail,
           phone: pPhone
         });
       }
