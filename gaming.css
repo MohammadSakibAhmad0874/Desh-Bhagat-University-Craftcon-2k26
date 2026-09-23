@@ -1912,6 +1912,186 @@ select.input-field-custom {
   }
 }
 
+/* ==========================================================================
+   PREMIUM LEFT/RIGHT FADED PANEL REVEAL ANIMATIONS (MINECRAFT GLASS SHAPES)
+   ========================================================================== */
+
+/* 1. Section Container Context & Clipping Boundary */
+.section-transition-panel {
+  position: relative !important;
+  overflow: hidden !important;
+  isolation: isolate;
+}
+
+/* 2. Decorative Faded Translucent Panel Base Styling */
+.section-panel {
+  position: absolute;
+  top: 3%;
+  bottom: 3%;
+  width: clamp(260px, 38vw, 540px);
+  z-index: 0 !important; /* Strictly BEHIND section content (z-index 5/10) */
+  pointer-events: none !important; /* NEVER blocks content, buttons, inputs or links */
+  background: linear-gradient(135deg, rgba(10, 10, 18, 0.32), rgba(24, 24, 42, 0.18));
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 0 35px rgba(0, 0, 0, 0.55), 0 12px 45px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  will-change: transform, opacity;
+  transition: transform 1.05s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 1.05s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Left Panel Geometric Polygon Cut & Starting Offset */
+.section-panel.panel-left {
+  left: -20px;
+  clip-path: polygon(0 0, 88% 0, 100% 28%, 84% 72%, 96% 100%, 0 100%);
+  transform: translate3d(-100%, 0, 0);
+  border-right: 1.5px solid rgba(255, 190, 11, 0.22);
+}
+
+/* Right Panel Geometric Polygon Cut & Starting Offset */
+.section-panel.panel-right {
+  right: -20px;
+  clip-path: polygon(12% 0, 100% 0, 100% 100%, 4% 100%, 16% 72%, 0 28%);
+  transform: translate3d(100%, 0, 0);
+  border-left: 1.5px solid rgba(0, 242, 254, 0.22);
+}
+
+/* 3. Revealed State — Smooth Inward Slide & Translucent Opacity */
+.section-transition-panel.revealed .section-panel.panel-left {
+  transform: translate3d(0, 0, 0);
+  opacity: 0.32;
+  transition-delay: 0ms; /* Left starts at 0ms */
+}
+
+.section-transition-panel.revealed .section-panel.panel-right {
+  transform: translate3d(0, 0, 0);
+  opacity: 0.32;
+  transition-delay: 130ms; /* Right starts 130ms later for cinematic stagger */
+}
+
+/* Alternating Direction Variant (.direction-reverse): Right first, Left second */
+.section-transition-panel.direction-reverse.revealed .section-panel.panel-right {
+  transition-delay: 0ms;
+}
+
+.section-transition-panel.direction-reverse.revealed .section-panel.panel-left {
+  transition-delay: 130ms;
+}
+
+/* 4. Section Content Staggered Entry Timing (240ms -> 340ms -> 440ms) */
+.section-transition-panel .section-header-centered,
+.section-transition-panel .gaming-hero-content {
+  opacity: 0;
+  transform: translate3d(0, 22px, 0);
+  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: 240ms;
+  position: relative;
+  z-index: 5;
+}
+
+.section-transition-panel.revealed .section-header-centered,
+.section-transition-panel.revealed .gaming-hero-content {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.section-transition-panel .gaming-filter-tabs,
+.section-transition-panel .games-grid,
+.section-transition-panel .battle-plan-card,
+.section-transition-panel .faq-accordion-card,
+.section-transition-panel .footer-top-grid {
+  opacity: 0;
+  transform: translate3d(0, 26px, 0);
+  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  z-index: 5;
+}
+
+.section-transition-panel.revealed .gaming-filter-tabs {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  transition-delay: 340ms;
+}
+
+.section-transition-panel.revealed .games-grid,
+.section-transition-panel.revealed .battle-plan-card,
+.section-transition-panel.revealed .faq-accordion-card,
+.section-transition-panel.revealed .footer-top-grid {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  transition-delay: 440ms;
+}
+
+/* Ensure all section content elements stay elevated & fully interactive above panels */
+.gaming-hero-content,
+.section-header-centered,
+.gaming-filter-tabs,
+.games-grid,
+.battle-plan-card,
+.faq-accordion-card,
+.site-footer > div {
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+/* 5. Responsive Tuning & Mobile Scaling */
+@media (max-width: 1024px) {
+  .section-panel {
+    width: 32vw;
+    backdrop-filter: blur(3px);
+  }
+  .section-transition-panel.revealed .section-panel {
+    opacity: 0.24;
+  }
+}
+
+@media (max-width: 768px) {
+  .section-panel {
+    width: 25vw;
+    top: 1%;
+    bottom: 1%;
+  }
+  .section-panel.panel-left {
+    transform: translate3d(-60%, 0, 0);
+  }
+  .section-panel.panel-right {
+    transform: translate3d(60%, 0, 0);
+  }
+  .section-transition-panel.revealed .section-panel {
+    opacity: 0.18;
+  }
+}
+
+@media (max-width: 480px) {
+  .section-panel {
+    width: 20vw;
+  }
+  .section-transition-panel.revealed .section-panel {
+    opacity: 0.14;
+  }
+}
+
+/* 6. Accessibility: Reduced Motion Override */
+@media (prefers-reduced-motion: reduce) {
+  .section-panel {
+    transform: none !important;
+    transition: opacity 0.4s ease !important;
+  }
+  .section-transition-panel .section-header-centered,
+  .section-transition-panel .gaming-hero-content,
+  .section-transition-panel .games-grid,
+  .section-transition-panel .battle-plan-card,
+  .section-transition-panel .faq-accordion-card {
+    transform: none !important;
+    transition: opacity 0.4s ease !important;
+  }
+}
+
+
 
 
 
