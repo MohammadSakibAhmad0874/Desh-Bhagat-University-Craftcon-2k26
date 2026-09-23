@@ -697,7 +697,7 @@ app.post('/api/payments/submit-proof', async (req, res) => {
       });
     }
 
-    if (screenshot.length > 8 * 1024 * 1024) {
+    if (rawScreenshot.length > 8 * 1024 * 1024) {
       return res.status(400).json({
         success: false,
         error: 'Payment screenshot image file size is too large. Please upload an image under 5MB.'
