@@ -767,24 +767,21 @@ function showRegistrationSuccess(data) {
    4. SCROLL REVEAL OBSERVER & INTERACTIVE ANIMATIONS
    ========================================================================== */
 function initScrollRevealObserver() {
-  const revealElements = document.querySelectorAll('.reveal-on-scroll, .section-header-centered, .pixel-mask-reveal');
+  const revealElements = document.querySelectorAll('.scroll-reveal, .reveal-on-scroll, [data-scroll-reveal], .section-header-centered');
   if (!revealElements.length) return;
-
-  // Set initial visibility fallback so elements are never hidden
-  revealElements.forEach(el => {
-    el.classList.add('is-visible');
-  });
 
   const observerOptions = {
     root: null,
-    rootMargin: '0px 0px -50px 0px',
-    threshold: 0.05
+    rootMargin: '0px 0px -40px 0px',
+    threshold: 0.15
   };
 
   const revealObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         entry.target.classList.add('is-visible');
+      } else {
+        entry.target.classList.remove('is-visible');
       }
     });
   }, observerOptions);
@@ -814,6 +811,18 @@ function initScrollRevealObserver() {
   }, { threshold: 0.3 });
 
   sections.forEach(sec => spyObserver.observe(sec));
+}
+
+function initHeroParallax() {
+  const bgImg = document.querySelector('.bg-tall-img');
+  if (!bgImg) return;
+
+  window.addEventListener('scroll', () => {
+    const scrollY = window.scrollY;
+    // Subtle background shift (0 to 20px max)
+    const parallaxOffset = Math.min(Math.max(scrollY * 0.04, 0), 20);
+    bgImg.style.transform = `translateY(${parallaxOffset}px)`;
+  }, { passive: true });
 }
 
 function initCardTiltPhysics() {

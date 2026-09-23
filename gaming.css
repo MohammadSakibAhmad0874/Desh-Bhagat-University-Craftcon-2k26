@@ -963,38 +963,105 @@ footer {
   100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-/* --- SECTION SCROLL REVEALS & MINECRAFT CLIP-PATH MASK --- */
-.reveal-on-scroll {
+/* --- INTERSECTIONOBSERVER SCROLL REVEAL (ENTER + EXIT MOTION ENGINE) --- */
+.scroll-reveal,
+.reveal-on-scroll,
+[data-scroll-reveal] {
   opacity: 0;
-  transform: translateY(30px) scale(0.98);
-  filter: blur(4px);
-  transition: opacity 0.75s var(--motion-ease-out),
-              transform 0.75s var(--motion-ease-out),
-              filter 0.75s var(--motion-ease-out),
-              clip-path 0.85s var(--motion-ease-out);
   will-change: opacity, transform, filter;
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 700ms cubic-bezier(0.16, 1, 0.3, 1),
+              filter 700ms cubic-bezier(0.16, 1, 0.3, 1);
+  transition-delay: var(--delay, 0ms);
 }
 
-.pixel-mask-reveal {
+/* Direction 1: LEFT (Primary sections enter from left) */
+.scroll-left,
+.reveal-on-scroll.scroll-left,
+[data-scroll-reveal="left"] {
+  transform: translateX(-60px);
+}
+
+/* Direction 2: RIGHT (Secondary sections enter from right) */
+.scroll-right,
+.reveal-on-scroll.scroll-right,
+[data-scroll-reveal="right"] {
+  transform: translateX(60px);
+}
+
+/* Direction 3: UP (Cards & Grid items enter from bottom) */
+.scroll-up,
+.reveal-on-scroll,
+.reveal-on-scroll.scroll-up,
+[data-scroll-reveal="up"] {
+  transform: translateY(45px);
+}
+
+/* Direction 4: FADE (Hero elements & subtle fade) */
+.scroll-fade,
+.reveal-on-scroll.scroll-fade,
+[data-scroll-reveal="fade"] {
+  transform: translateY(15px) scale(0.98);
+}
+
+/* Hero Content subtle scroll reveal (never completely disappears) */
+.gaming-hero-content.scroll-reveal,
+.gaming-hero-content[data-scroll-reveal] {
+  opacity: 0.25;
+  transform: translateY(0) scale(0.98);
+  transition: opacity 700ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Section Header Specific Motion Hierarchy */
+.section-header-centered .pixel-tag,
+.section-header-centered .gaming-main-title {
+  opacity: 0;
+  transform: translateX(-35px);
+  transition: opacity 650ms cubic-bezier(0.16, 1, 0.3, 1),
+              transform 650ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.section-header-centered p {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 650ms cubic-bezier(0.16, 1, 0.3, 1) 100ms,
+              transform 650ms cubic-bezier(0.16, 1, 0.3, 1) 100ms;
+}
+
+.section-header-centered.is-visible .pixel-tag,
+.section-header-centered.is-visible .gaming-main-title {
   opacity: 1;
-  clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
-  transition: opacity 0.75s var(--motion-ease-out), transform 0.75s var(--motion-ease-out);
+  transform: translateX(0);
 }
 
+.section-header-centered.is-visible p {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ACTIVE VISIBLE STATE (ENTER VIEWPORT) */
+.scroll-reveal.is-visible,
 .reveal-on-scroll.is-visible,
-.pixel-mask-reveal.is-visible {
-  opacity: 1;
-  transform: translateY(0) scale(1);
-  filter: blur(0);
+[data-scroll-reveal].is-visible {
+  opacity: 1 !important;
+  transform: translate(0, 0) scale(1) !important;
+  filter: blur(0) !important;
+}
+
+/* Hover overrides for game cards when visible */
+.game-card.is-visible:hover {
+  transform: translateY(-8px) scale(1) !important;
 }
 
 /* Stagger Delays for Cards & Items */
-.delay-0 { transition-delay: 0ms; }
-.delay-1 { transition-delay: 90ms; }
-.delay-2 { transition-delay: 180ms; }
-.delay-3 { transition-delay: 270ms; }
-.delay-4 { transition-delay: 360ms; }
-.delay-5 { transition-delay: 450ms; }
+.delay-0, [data-delay="0"] { --delay: 0ms; transition-delay: 0ms; }
+.delay-1, [data-delay="1"] { --delay: 100ms; transition-delay: 100ms; }
+.delay-2, [data-delay="2"] { --delay: 200ms; transition-delay: 200ms; }
+.delay-3, [data-delay="3"] { --delay: 300ms; transition-delay: 300ms; }
+.delay-4, [data-delay="4"] { --delay: 400ms; transition-delay: 400ms; }
+.delay-5, [data-delay="5"] { --delay: 500ms; transition-delay: 500ms; }
+.delay-6, [data-delay="6"] { --delay: 600ms; transition-delay: 600ms; }
 
 /* --- NAVIGATION LINK ANIMATED UNDERLINE & ACTIVE ITEM --- */
 .desktop-nav .nav-link {
