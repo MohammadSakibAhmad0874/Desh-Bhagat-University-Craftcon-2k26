@@ -330,7 +330,7 @@ function initCentralizedRegistrationWizard() {
     });
   }
 
-  // Screenshot input file reader
+  // Screenshot input file reader with client-side canvas compression
   const screenshotInput = document.getElementById('reg-screenshot-input');
   const previewWrap = document.getElementById('screenshot-preview-wrap');
   const previewImg = document.getElementById('screenshot-preview-img');
@@ -340,8 +340,8 @@ function initCentralizedRegistrationWizard() {
       const file = e.target.files[0];
       if (!file) return;
 
-      if (file.size > 5 * 1024 * 1024) {
-        alert('File size exceeds maximum 5MB limit. Please select a smaller payment screenshot.');
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File size exceeds maximum 10MB limit. Please select a smaller payment screenshot.');
         screenshotInput.value = '';
         currentBase64Screenshot = null;
         if (previewWrap) previewWrap.style.display = 'none';
@@ -350,9 +350,39 @@ function initCentralizedRegistrationWizard() {
 
       const reader = new FileReader();
       reader.onload = function(evt) {
-        currentBase64Screenshot = evt.target.result;
-        if (previewImg) previewImg.src = currentBase64Screenshot;
-        if (previewWrap) previewWrap.style.display = 'block';
+        const rawDataUrl = evt.target.result;
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 1000;
+
+          if (width > maxDim || height > maxDim) {
+            if (width > height) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            } else {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          currentBase64Screenshot = canvas.toDataURL('image/jpeg', 0.80);
+          if (previewImg) previewImg.src = currentBase64Screenshot;
+          if (previewWrap) previewWrap.style.display = 'block';
+        };
+        img.onerror = function() {
+          currentBase64Screenshot = rawDataUrl;
+          if (previewImg) previewImg.src = currentBase64Screenshot;
+          if (previewWrap) previewWrap.style.display = 'block';
+        };
+        img.src = rawDataUrl;
       };
       reader.readAsDataURL(file);
     });
@@ -399,8 +429,15 @@ function initCentralizedRegistrationWizard() {
           })
         });
 
-        const data = await res.json();
-        if (data.success) {
+        const dataText = await res.text();
+        let data;
+        try {
+          data = JSON.parse(dataText);
+        } catch(e) {
+          console.error('Server response parse error:', dataText);
+        }
+
+        if (res.ok && data && data.success) {
           showRegistrationSuccess({
             registrationId: wizardState.registrationId,
             game: GAMES_CATALOGUE[wizardState.gameId] ? GAMES_CATALOGUE[wizardState.gameId].name : wizardState.gameId,
@@ -409,7 +446,8 @@ function initCentralizedRegistrationWizard() {
             status: 'PAYMENT_SUBMITTED'
           });
         } else {
-          alert(`Submission error: ${data.error || 'Please check your inputs and try again.'}`);
+          const errorMsg = (data && data.error) ? data.error : `Server returned HTTP ${res.status}`;
+          alert(`Submission error: ${errorMsg}`);
           if (btnSubmitProof) {
             btnSubmitProof.disabled = false;
             btnSubmitProof.innerHTML = '<span>📥 SUBMIT PAYMENT PROOF</span>';

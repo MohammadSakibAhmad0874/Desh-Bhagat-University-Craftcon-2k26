@@ -21,12 +21,14 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 
-// Middleware to capture raw body for Webhook HMAC verification
+// Middleware to capture raw body for Webhook HMAC verification and allow base64 screenshot uploads up to 10MB
 app.use(express.json({
+  limit: '10mb',
   verify: (req, res, buf) => {
     req.rawBody = buf;
   }
 }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 app.use(express.static(path.resolve(__dirname)));
 app.use('/assets', express.static(path.resolve(__dirname, 'assets')));
