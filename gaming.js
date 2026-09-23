@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }, 60);
 
   initScrollProgress();
+  initMobileNavMenu();
   initGamingCategoryFilter();
   initGameDetailsModal();
   initCentralizedRegistrationWizard();
@@ -1051,5 +1052,47 @@ function initThreeJSScene() {
     }, { passive: true });
   }
 }
+
+/* ==========================================================================
+   5. MOBILE NAVIGATION MENU DRAWER CONTROLLER
+   ========================================================================== */
+function initMobileNavMenu() {
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  const drawer = document.getElementById('mobile-nav-drawer');
+  const navLinks = document.querySelectorAll('.mobile-nav-link, .mobile-action-btn');
+
+  if (!menuBtn || !drawer) return;
+
+  function toggleMenu() {
+    const isActive = drawer.classList.contains('active');
+    if (isActive) {
+      drawer.classList.remove('active');
+      menuBtn.classList.remove('active');
+    } else {
+      drawer.classList.add('active');
+      menuBtn.classList.add('active');
+    }
+  }
+
+  menuBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleMenu();
+  });
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      drawer.classList.remove('active');
+      menuBtn.classList.remove('active');
+    });
+  });
+
+  document.addEventListener('click', (e) => {
+    if (drawer.classList.contains('active') && !drawer.contains(e.target) && !menuBtn.contains(e.target)) {
+      drawer.classList.remove('active');
+      menuBtn.classList.remove('active');
+    }
+  });
+}
+
 
 

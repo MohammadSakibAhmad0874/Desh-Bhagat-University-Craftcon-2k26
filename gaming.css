@@ -1221,3 +1221,396 @@ footer {
   }
 }
 
+/* ==========================================================================
+   6. COMPREHENSIVE MOBILE & TABLET RESPONSIVE SYSTEM
+   ========================================================================== */
+
+/* Mobile Hamburger Menu Toggle Button Base Styles */
+.mobile-menu-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 30px;
+  height: 22px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1005;
+}
+
+.mobile-menu-btn span {
+  width: 100%;
+  height: 3px;
+  background-color: var(--text-white);
+  border-radius: 2px;
+  transition: all 0.3s var(--motion-ease-out);
+}
+
+.mobile-menu-btn.active span:nth-child(1) {
+  transform: translateY(9.5px) rotate(45deg);
+  background-color: var(--color-amber-bright);
+}
+
+.mobile-menu-btn.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.mobile-menu-btn.active span:nth-child(3) {
+  transform: translateY(-9.5px) rotate(-45deg);
+  background-color: var(--color-amber-bright);
+}
+
+/* Mobile Navigation Drawer Base Styles */
+.mobile-nav-drawer {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: rgba(12, 12, 22, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1.5px solid var(--gaming-border);
+  padding: 20px 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  transition: opacity 0.3s var(--motion-ease-out), transform 0.3s var(--motion-ease-out);
+  z-index: 1000;
+}
+
+.mobile-nav-drawer.active {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.mobile-nav-links {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mobile-nav-link {
+  color: var(--text-white);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-decoration: none;
+  display: block;
+  padding: 8px 0;
+  transition: color 0.2s ease;
+}
+
+.mobile-nav-link:hover {
+  color: var(--color-amber-bright);
+}
+
+.mobile-nav-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--gaming-border);
+}
+
+/* --- RESPONSIVE BREAKPOINT: TABLETS & DESKTOPS (<= 1024px) --- */
+@media (max-width: 1024px) {
+  .site-header {
+    padding: 12px 4%;
+  }
+
+  .gaming-hero {
+    min-height: auto;
+    padding: 85px 4% 40px;
+  }
+
+  .gaming-hero-content {
+    max-width: 100%;
+    margin-top: 0;
+  }
+
+  .games-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+
+/* --- RESPONSIVE BREAKPOINT: MOBILE & SMALL TABLETS (<= 768px) --- */
+@media (max-width: 768px) {
+  /* Navigation & Header */
+  .desktop-nav {
+    display: none !important;
+  }
+
+  .header-actions .btn-gaming-secondary {
+    display: none !important;
+  }
+
+  .header-actions .pill-cta-btn {
+    display: none !important;
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+  }
+
+  .mobile-nav-drawer {
+    display: block;
+  }
+
+  /* Hero Section Mobile Polish */
+  .gaming-hero {
+    padding: 75px 16px 36px;
+  }
+
+  .gaming-hero-content {
+    padding: 20px 18px;
+    border-radius: 12px;
+  }
+
+  .gaming-main-title {
+    font-size: clamp(1.7rem, 7vw, 2.6rem) !important;
+    line-height: 1.12;
+    letter-spacing: -0.5px;
+  }
+
+  .gaming-hero-tagline {
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .hero-event-details {
+    font-size: 0.84rem;
+  }
+
+  .hero-fee-block {
+    padding: 14px;
+    margin: 16px 0;
+  }
+
+  .fee-value {
+    font-size: clamp(1.3rem, 5.5vw, 1.7rem) !important;
+  }
+
+  .gaming-hero-actions {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .gaming-hero-actions .btn-gaming-primary,
+  .gaming-hero-actions .btn-gaming-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Games Showcase Section Mobile Polish */
+  .game-showcase-section {
+    padding: 60px 16px;
+  }
+
+  .gaming-filter-tabs {
+    display: flex;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    white-space: nowrap;
+    padding-bottom: 8px;
+    margin-bottom: 24px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .gaming-filter-tabs .filter-btn {
+    flex: 0 0 auto;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+  }
+
+  .games-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px;
+    padding: 0;
+  }
+
+  .game-card-body {
+    padding: 18px 16px;
+  }
+
+  .game-card-title {
+    font-size: 1.35rem;
+  }
+
+  .game-card-actions {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .game-card-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Tournament & Rules Mobile Polish */
+  #tournament {
+    padding: 60px 16px !important;
+  }
+
+  #tournament > div > div:nth-child(2) {
+    grid-template-columns: 1fr !important;
+    gap: 16px;
+  }
+
+  /* FAQ Mobile Polish */
+  #faq {
+    padding: 60px 16px !important;
+  }
+
+  #faq details {
+    padding: 14px 16px !important;
+  }
+
+  #faq summary {
+    font-size: 1rem !important;
+  }
+
+  /* Footer Mobile Polish */
+  .site-footer {
+    padding-top: 40px;
+  }
+
+  .footer-top-grid {
+    grid-template-columns: 1fr !important;
+    gap: 32px;
+  }
+
+  .footer-bottom-bar {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+
+  /* Centralized Registration Wizard Modal Mobile Polish */
+  .gaming-modal-overlay {
+    padding: 8px !important;
+  }
+
+  .gaming-modal-container {
+    max-width: 96% !important;
+    max-height: 92vh !important;
+    margin: 0 auto !important;
+    border-radius: 12px !important;
+  }
+
+  .wizard-header {
+    padding: 12px 16px !important;
+  }
+
+  .wizard-title {
+    font-size: 1.1rem !important;
+  }
+
+  .wizard-body {
+    padding: 16px 14px !important;
+    max-height: calc(88vh - 120px) !important;
+  }
+
+  .category-select-grid,
+  .game-select-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Set inputs to 16px to prevent iOS Safari auto-zooming on focus */
+  .input-field-custom {
+    font-size: 16px !important;
+    padding: 12px 14px !important;
+  }
+
+  .form-group-wrap {
+    margin-bottom: 14px !important;
+  }
+
+  #step-pane-3 form > div[style*="grid-template-columns:1fr 1fr"],
+  #step-pane-3 form > div[style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .price-summary-box {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 14px;
+  }
+
+  .wizard-footer {
+    padding: 12px 16px !important;
+  }
+
+  .btn-wizard-back,
+  .btn-wizard-next {
+    padding: 10px 16px !important;
+    font-size: 0.85rem !important;
+  }
+
+  /* Game Details Modal Mobile Polish */
+  #game-details-modal .gaming-modal-container {
+    max-width: 96% !important;
+  }
+}
+
+/* --- RESPONSIVE BREAKPOINT: ULTRA-SMALL PHONES (<= 480px) --- */
+@media (max-width: 480px) {
+  .site-header {
+    padding: 10px 12px;
+  }
+
+  .brand-text {
+    font-size: 1.05rem;
+  }
+
+  .brand-year {
+    display: none;
+  }
+
+  .gaming-hero {
+    padding: 68px 12px 28px;
+  }
+
+  .gaming-hero-content {
+    padding: 16px 14px;
+  }
+
+  .gaming-badge-pill {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+  }
+
+  .detail-line {
+    font-size: 0.8rem;
+  }
+
+  .fee-label {
+    font-size: 0.72rem;
+  }
+
+  .fee-sub {
+    font-size: 0.7rem;
+  }
+
+  .voucher-card {
+    padding: 16px 12px !important;
+  }
+
+  .voucher-card > div[style*="grid-template-columns:1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+}
+
+
