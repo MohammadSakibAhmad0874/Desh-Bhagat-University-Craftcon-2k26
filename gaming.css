@@ -61,14 +61,14 @@ body.smooth-scroll-body {
   z-index: 2;
 }
 
-/* Elevate WebGL 3D moving voxel canvas above all page content */
+/* Elevate WebGL 3D moving voxel canvas right above wallpaper background layer */
 .webgl-canvas, .ambient-canvas {
   position: fixed;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 900 !important;
-  opacity: 0.9 !important;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2 !important;
+  opacity: 0.95 !important;
   pointer-events: none !important;
 }
 
