@@ -7,6 +7,7 @@ require('dotenv').config();
 const { db, initDb, testDbConnection } = require('./db');
 const emailService = require('./emailService');
 const googleSheetsService = require('./googleSheetsService');
+const { EVENTS_REGISTRY, calculateRegistrationFee } = require('./eventsRegistry');
 
 // Initialize Razorpay SDK if available
 let Razorpay = null;
@@ -197,7 +198,15 @@ app.get('/api/config', (req, res) => {
   });
 });
 
-// 2. GET GAMES CATALOGUE ENDPOINT
+// 2. GET EVENTS CATALOGUE ENDPOINT (UNIFIED PLATFORM)
+app.get('/api/events', (req, res) => {
+  res.json({
+    success: true,
+    count: Object.keys(EVENTS_REGISTRY).length,
+    events: EVENTS_REGISTRY
+  });
+});
+
 app.get('/api/games', (req, res) => {
   res.json({
     success: true,
@@ -206,120 +215,244 @@ app.get('/api/games', (req, res) => {
   });
 });
 
-// 3. REGISTRATION CREATION & INITIAL DATABASE PENDING RECORD
-app.post('/api/registrations/create', async (req, res) => {
+// 3. UNIFIED REGISTRATION CREATION & DATABASE RECORD
+app.post(['/api/registrations/create', '/api/register'], async (req, res) => {
   try {
-    const { gameId, teamName, college, captain, players } = req.body;
-
-    const gameConfig = GAMES_REGISTRY[gameId];
-    if (!gameConfig) {
-      return res.status(400).json({ success: false, error: 'Invalid game selected.' });
+    const body = req.body || {};
+    const gameId = body.gameId || body.game_id;
+    const eventId = body.eventId || body.event_id;
+    const eventIds = body.eventIds || body.event_ids;
+    
+    // Normalize payload
+    const rawCollege = body.college || body.college_name || body.collegeName || '';
+    const rawTeamName = body.teamName || body.team_name || body.squadName || '';
+    
+    // Extract Captain / Leader details
+    let captainObj = body.captain || {};
+    if (!captainObj.name && body.leader_name) {
+      captainObj = {
+        name: body.leader_name || body.leaderName || '',
+        email: body.leader_email || body.leaderEmail || '',
+        phone: body.leader_phone || body.leaderPhone || ''
+      };
     }
 
-    if (!college || !college.trim() || !captain || !captain.name || !captain.email || !captain.phone) {
-      return res.status(400).json({ success: false, error: 'College and Captain contact details are required.' });
+    // Resolve target event ID
+    const targetEventId = (eventId || gameId || (Array.isArray(eventIds) && eventIds[0]) || 'HACKATHON').toUpperCase();
+
+    // Check registry in EVENTS_REGISTRY or fallback to GAMES_REGISTRY
+    let eventConfig = EVENTS_REGISTRY[targetEventId];
+    if (!eventConfig) {
+      const fallbackGame = GAMES_REGISTRY[targetEventId];
+      if (fallbackGame) {
+        eventConfig = {
+          id: fallbackGame.id,
+          name: fallbackGame.name,
+          category: fallbackGame.category.toUpperCase(),
+          registrationType: fallbackGame.type.toUpperCase(),
+          minParticipants: fallbackGame.minPlayers,
+          maxParticipants: fallbackGame.maxPlayers,
+          feePerParticipant: fallbackGame.feePerPerson,
+          fixedFee: fallbackGame.minPlayers * fallbackGame.feePerPerson,
+          paymentRequired: true
+        };
+      }
     }
 
-    if (gameConfig.type === 'squad' && (!teamName || !teamName.trim())) {
-      return res.status(400).json({ success: false, error: 'Team Name is required for squad registrations.' });
+    if (!eventConfig) {
+      return res.status(400).json({ success: false, error: `Invalid event selected: ${targetEventId}` });
     }
 
-    // Validate player array count strictly against server rule
-    const providedPlayers = Array.isArray(players) ? players : [];
-    const requiredPlayerCount = gameConfig.minPlayers;
-
-    if (providedPlayers.length !== requiredPlayerCount) {
-      return res.status(400).json({
-        success: false,
-        error: `Expected ${requiredPlayerCount} players for ${gameConfig.name}, but received ${providedPlayers.length}.`
-      });
+    if (!rawCollege || !rawCollege.trim() || !captainObj || !captainObj.name || !captainObj.email || !captainObj.phone) {
+      return res.status(400).json({ success: false, error: 'College/University and Captain/Leader contact details (name, email, phone) are required.' });
     }
 
-    // Strict Backend Price Calculation (₹50 / person mandatory rule)
-    const feePerPerson = 50;
-    const totalAmount = requiredPlayerCount * feePerPerson;
+    const cleanCollege = rawCollege.trim();
+    const cleanCaptain = {
+      name: captainObj.name.trim(),
+      email: captainObj.email.trim(),
+      phone: captainObj.phone.trim()
+    };
 
+    // Determine registration type (TEAM, SQUAD, SOLO)
+    const regType = (eventConfig.registrationType || 'SOLO').toUpperCase();
+    const cleanTeamName = (regType === 'SOLO') 
+      ? `Solo: ${cleanCaptain.name}`
+      : (rawTeamName && rawTeamName.trim() ? rawTeamName.trim() : `Team ${cleanCaptain.name}`);
+
+    if (regType !== 'SOLO' && (!rawTeamName || !rawTeamName.trim())) {
+      return res.status(400).json({ success: false, error: 'Team/Squad Name is required.' });
+    }
+
+    const providedPlayers = Array.isArray(players) && players.length > 0 
+      ? players 
+      : [cleanCaptain];
+
+    const isHackathon = targetEventId === 'HACKATHON' || eventConfig.category === 'HACKATHON';
     const paymentProvider = (process.env.PAYMENT_PROVIDER || 'upi').toLowerCase().trim();
+
+    // Price calculation
+    let feePerPerson = eventConfig.feePerParticipant || 0;
+    let totalAmount = eventConfig.paymentRequired ? (providedPlayers.length * feePerPerson) : 0;
+    if (isHackathon) {
+      totalAmount = 0;
+      feePerPerson = 0;
+    }
 
     // Generate canonical Registration ID
     const randomHex = crypto.randomBytes(3).toString('hex').toUpperCase();
-    const registrationId = `CRAFT26-${gameConfig.id}-${randomHex}`;
+    const registrationId = `CRAFT26-${eventConfig.id}-${randomHex}`;
 
-    const cleanCollege = college.trim();
-    const cleanTeamName = gameConfig.type === 'squad' 
-      ? teamName.trim() 
-      : `Solo: ${captain.name.trim()}`;
+    if (isHackathon || !eventConfig.paymentRequired || totalAmount === 0) {
+      // FREE / HACKATHON REGISTRATION -> IMMEDIATELY CONFIRM
+      await db.batch([
+        {
+          sql: `INSERT INTO registrations (
+            registration_id, category, game, registration_type, team_name,
+            college, captain_name, captain_email, captain_phone, player_count,
+            total_amount, amount, fee_per_person, currency, payment_method, payment_status, registration_status,
+            confirmed_at, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, 0, 'INR', 'FREE', 'VERIFIED', 'CONFIRMED', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+          args: [
+            registrationId,
+            eventConfig.category || 'HACKATHON',
+            eventConfig.id,
+            regType,
+            cleanTeamName,
+            cleanCollege,
+            cleanCaptain.name,
+            cleanCaptain.email,
+            cleanCaptain.phone,
+            providedPlayers.length
+          ]
+        }
+      ]);
 
-    // Create initial record in Turso DB as PENDING_PAYMENT
-    await db.batch([
-      {
-        sql: `INSERT INTO registrations (
-          registration_id, category, game, registration_type, team_name,
-          college, captain_name, captain_email, captain_phone, player_count,
-          total_amount, amount, fee_per_person, currency, payment_method, payment_status, registration_status,
-          created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'INR', ?, 'PENDING', 'PENDING_PAYMENT', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+      // Insert Player Roster into Turso
+      const playerStatements = providedPlayers.map((player, idx) => ({
+        sql: `INSERT INTO players (registration_id, player_index, name, full_name, in_game_name, game_uid, email, phone, role)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         args: [
           registrationId,
-          gameConfig.category,
-          gameConfig.id,
-          gameConfig.type,
-          cleanTeamName,
-          cleanCollege,
-          captain.name.trim(),
-          captain.email.trim(),
-          captain.phone.trim(),
-          requiredPlayerCount,
-          totalAmount,
-          totalAmount,
-          feePerPerson,
-          paymentProvider.toUpperCase()
+          idx + 1,
+          (player.name || cleanCaptain.name).trim(),
+          (player.name || cleanCaptain.name).trim(),
+          (player.inGameName || player.ign || 'N/A').trim(),
+          (player.gameUid || player.uid || 'N/A').trim(),
+          (player.email || cleanCaptain.email).trim(),
+          (player.phone || cleanCaptain.phone).trim(),
+          idx === 0 ? 'CAPTAIN' : `BUILDER_${idx + 1}`
         ]
-      }
-    ]);
+      }));
 
-    // Insert Player Roster into Turso
-    const playerStatements = providedPlayers.slice(0, requiredPlayerCount).map((player, idx) => ({
-      sql: `INSERT INTO players (registration_id, player_index, name, full_name, in_game_name, game_uid, email, phone, role)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      args: [
+      await db.batch(playerStatements);
+
+      console.log(`✅ [Flagship Hackathon Registration Created] Reg ID: ${registrationId} (${eventConfig.name}) - CONFIRMED`);
+
+      // Trigger Google Sheets Sync & Confirmation Email asynchronously
+      setImmediate(async () => {
+        try {
+          await googleSheetsService.syncConfirmedRegistration(registrationId);
+        } catch (gsErr) {
+          console.warn('⚠️ [Google Sheets Sync Notice]:', gsErr.message);
+        }
+        try {
+          await emailService.sendRegistrationConfirmation(registrationId);
+        } catch (emErr) {
+          console.warn('⚠️ [Email Notice] Failed to send hackathon confirmation email:', emErr.message);
+        }
+      });
+
+      return res.json({
+        success: true,
+        status: 'CONFIRMED',
         registrationId,
-        idx + 1,
-        (player.name || captain.name).trim(),
-        (player.name || captain.name).trim(),
-        (player.inGameName || player.ign || 'N/A').trim(),
-        (player.gameUid || player.uid || 'N/A').trim(),
-        (player.email || captain.email).trim(),
-        (player.phone || captain.phone).trim(),
-        idx === 0 ? 'CAPTAIN' : `PLAYER_${idx + 1}`
-      ]
-    }));
+        game: eventConfig.name,
+        eventId: eventConfig.id,
+        category: eventConfig.category,
+        registrationType: regType,
+        teamName: cleanTeamName,
+        college: cleanCollege,
+        captain: cleanCaptain,
+        playerCount: providedPlayers.length,
+        totalAmount: 0,
+        amount: 0,
+        paymentRequired: false,
+        paymentStatus: 'VERIFIED',
+        message: 'Hackathon Registration Confirmed! Your official pass has been generated.'
+      });
 
-    await db.batch(playerStatements);
+    } else {
+      // PAID GAMING REGISTRATION -> INITIAL DB RECORD WITH PENDING PAYMENT
+      await db.batch([
+        {
+          sql: `INSERT INTO registrations (
+            registration_id, category, game, registration_type, team_name,
+            college, captain_name, captain_email, captain_phone, player_count,
+            total_amount, amount, fee_per_person, currency, payment_method, payment_status, registration_status,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'INR', ?, 'PENDING', 'PENDING_PAYMENT', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+          args: [
+            registrationId,
+            eventConfig.category || 'GAMING',
+            eventConfig.id,
+            regType,
+            cleanTeamName,
+            cleanCollege,
+            cleanCaptain.name,
+            cleanCaptain.email,
+            cleanCaptain.phone,
+            providedPlayers.length,
+            totalAmount,
+            totalAmount,
+            feePerPerson,
+            paymentProvider.toUpperCase()
+          ]
+        }
+      ]);
 
-    console.log(`📝 [Registration Created in Turso] Reg ID: ${registrationId} (${gameConfig.name}) Total: ₹${totalAmount}`);
+      // Insert Player Roster into Turso
+      const playerStatements = providedPlayers.map((player, idx) => ({
+        sql: `INSERT INTO players (registration_id, player_index, name, full_name, in_game_name, game_uid, email, phone, role)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        args: [
+          registrationId,
+          idx + 1,
+          (player.name || cleanCaptain.name).trim(),
+          (player.name || cleanCaptain.name).trim(),
+          (player.inGameName || player.ign || 'N/A').trim(),
+          (player.gameUid || player.uid || 'N/A').trim(),
+          (player.email || cleanCaptain.email).trim(),
+          (player.phone || cleanCaptain.phone).trim(),
+          idx === 0 ? 'CAPTAIN' : `PLAYER_${idx + 1}`
+        ]
+      }));
 
-    res.json({
-      success: true,
-      registrationId,
-      game: gameConfig.name,
-      gameId: gameConfig.id,
-      category: gameConfig.category,
-      registrationType: gameConfig.type,
-      teamName: cleanTeamName,
-      college: cleanCollege,
-      captain: {
-        name: captain.name.trim(),
-        email: captain.email.trim(),
-        phone: captain.phone.trim()
-      },
-      playerCount: requiredPlayerCount,
-      feePerPerson,
-      totalAmount,
-      amount: totalAmount,
-      currency: 'INR',
-      paymentProvider
-    });
+      await db.batch(playerStatements);
+
+      console.log(`📝 [Gaming Registration Created in Turso] Reg ID: ${registrationId} (${eventConfig.name}) Total: ₹${totalAmount}`);
+
+      return res.json({
+        success: true,
+        status: 'PENDING_PAYMENT',
+        registrationId,
+        game: eventConfig.name,
+        gameId: eventConfig.id,
+        eventId: eventConfig.id,
+        category: eventConfig.category,
+        registrationType: regType,
+        teamName: cleanTeamName,
+        college: cleanCollege,
+        captain: cleanCaptain,
+        playerCount: providedPlayers.length,
+        feePerPerson,
+        totalAmount,
+        amount: totalAmount,
+        currency: 'INR',
+        paymentRequired: true,
+        paymentProvider
+      });
+    }
 
   } catch (error) {
     console.error('Server error in /api/registrations/create:', error);
