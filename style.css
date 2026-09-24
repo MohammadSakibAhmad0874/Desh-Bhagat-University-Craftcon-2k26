@@ -4417,16 +4417,27 @@ a {
     gap: 12px;
   }
 
+  /* Side Docks: Hidden on mobile & tablet for clean viewport */
+  .tf-dock-left,
+  .tf-dock-right {
+    display: none !important;
+  }
+
   /* Registration Modal (Fits 100dvh smoothly on mobile) */
   .modal-backdrop {
     padding: 10px;
+    align-items: flex-start;
+    overflow-y: auto;
   }
 
   .modal-dialog {
     padding: 20px 14px;
-    max-height: 92vh;
+    max-height: 94dvh;
     border-radius: var(--radius-md);
     width: 95vw;
+    margin: auto;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .modal-title {
@@ -4446,6 +4457,17 @@ a {
   .ticket-grid {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+
+  .hero-cta-group {
+    flex-direction: column;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .hero-cta-group a {
+    width: 100%;
+    justify-content: center;
   }
 }
 
