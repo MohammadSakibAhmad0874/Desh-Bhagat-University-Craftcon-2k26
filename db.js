@@ -2,8 +2,8 @@ const { createClient } = require('@libsql/client');
 require('dotenv').config();
 
 /**
- * CRAFTCON '26 GAMING ARENA — CENTRALIZED TURSO / libSQL DATABASE CLIENT
- * Connects directly to Turso Cloud (process.env.TURSO_DATABASE_URL)
+ * CRAFTCON '26 PLATFORM — CENTRALIZED TURSO / libSQL DATABASE CLIENT
+ * Primary Source of Truth: Turso Cloud / libSQL Relational Database.
  */
 
 const tursoUrl = (process.env.TURSO_DATABASE_URL || '').trim();
@@ -38,7 +38,7 @@ async function ensureColumnExists(tableName, columnName, columnDef) {
 }
 
 /**
- * Initializes Database Tables & Migration Columns
+ * Initializes Database Tables & Relational Schemas
  */
 async function initDb() {
   if (isInitialized) return true;
@@ -50,22 +50,24 @@ async function initDb() {
         throw new Error('Database client is not initialized.');
       }
 
-      // 1. REGISTRATIONS TABLE
+      // 1. REGISTRATIONS TABLE (Primary Master Record)
       await db.execute(`
         CREATE TABLE IF NOT EXISTS registrations (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           registration_id TEXT UNIQUE NOT NULL,
-          category TEXT NOT NULL,
-          game TEXT NOT NULL,
-          registration_type TEXT NOT NULL,
+          category TEXT DEFAULT 'GENERAL',
+          game TEXT DEFAULT 'HACKATHON',
+          registration_type TEXT DEFAULT 'TEAM',
           team_name TEXT,
           college TEXT NOT NULL,
           captain_name TEXT NOT NULL,
           captain_email TEXT NOT NULL,
           captain_phone TEXT NOT NULL,
-          player_count INTEGER NOT NULL,
-          total_amount REAL NOT NULL,
-          amount REAL,
+          primary_email TEXT,
+          primary_phone TEXT,
+          player_count INTEGER NOT NULL DEFAULT 1,
+          total_amount REAL NOT NULL DEFAULT 0,
+          amount REAL DEFAULT 0,
           fee_per_person REAL NOT NULL DEFAULT 50,
           currency TEXT DEFAULT 'INR',
           payment_method TEXT DEFAULT 'UPI',
@@ -94,7 +96,41 @@ async function initDb() {
         );
       `);
 
-      // 2. PLAYERS TABLE
+      // 2. REGISTRATION EVENTS TABLE (Relational Events Entity for Multi-Event Registrations)
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS registration_events (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          registration_id TEXT NOT NULL,
+          event_id TEXT NOT NULL,
+          event_name TEXT NOT NULL,
+          category TEXT NOT NULL,
+          registration_type TEXT NOT NULL,
+          team_name TEXT,
+          track TEXT,
+          amount REAL NOT NULL DEFAULT 0,
+          status TEXT NOT NULL DEFAULT 'PENDING',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      // 3. PARTICIPANTS TABLE (Relational Members Roster)
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS participants (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          registration_id TEXT NOT NULL,
+          registration_event_id INTEGER,
+          full_name TEXT NOT NULL,
+          email TEXT,
+          phone TEXT,
+          college TEXT,
+          in_game_name TEXT,
+          game_uid TEXT,
+          role TEXT NOT NULL DEFAULT 'MEMBER',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      // 4. PLAYERS TABLE (Backward-Compatible Roster View)
       await db.execute(`
         CREATE TABLE IF NOT EXISTS players (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -111,7 +147,7 @@ async function initDb() {
         );
       `);
 
-      // 3. PAYMENTS TABLE
+      // 5. PAYMENTS TABLE
       await db.execute(`
         CREATE TABLE IF NOT EXISTS payments (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -138,7 +174,26 @@ async function initDb() {
         );
       `);
 
-      // Run Column Migrations for Existing Tables
+      // 6. EVENTS REGISTRY TABLE
+      await db.execute(`
+        CREATE TABLE IF NOT EXISTS events (
+          id TEXT PRIMARY KEY,
+          slug TEXT UNIQUE NOT NULL,
+          name TEXT NOT NULL,
+          category TEXT NOT NULL,
+          registration_type TEXT NOT NULL,
+          min_participants INTEGER NOT NULL DEFAULT 1,
+          max_participants INTEGER NOT NULL DEFAULT 1,
+          fee REAL NOT NULL DEFAULT 0,
+          active INTEGER NOT NULL DEFAULT 1,
+          configuration TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      // Ensure All Migration Columns Exist Dynamically
+      await ensureColumnExists('registrations', 'primary_email', 'TEXT');
+      await ensureColumnExists('registrations', 'primary_phone', 'TEXT');
       await ensureColumnExists('registrations', 'amount', 'REAL');
       await ensureColumnExists('registrations', 'currency', "TEXT DEFAULT 'INR'");
       await ensureColumnExists('registrations', 'payment_method', "TEXT DEFAULT 'UPI'");
@@ -161,18 +216,20 @@ async function initDb() {
       await ensureColumnExists('payments', 'verification_notes', 'TEXT');
       await ensureColumnExists('payments', 'updated_at', 'DATETIME');
 
-      // Create Idempotency Unique Indexes
+      // Create Unique Indexes for Idempotency
       try {
         await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_reg_rzp_pay ON registrations(razorpay_payment_id) WHERE razorpay_payment_id IS NOT NULL;");
         await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_pay_rzp_pay ON payments(razorpay_payment_id) WHERE razorpay_payment_id IS NOT NULL;");
         await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_reg_utr ON registrations(utr_transaction_id) WHERE utr_transaction_id IS NOT NULL;");
         await db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_pay_utr ON payments(utr_transaction_id) WHERE utr_transaction_id IS NOT NULL;");
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_reg_events_reg_id ON registration_events(registration_id);");
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_part_reg_id ON participants(registration_id);");
       } catch (idxErr) {
         console.warn('Index creation notice:', idxErr.message);
       }
 
       isInitialized = true;
-      console.log('✅ Turso/libSQL Schema initialized successfully (registrations, players, payments).');
+      console.log('✅ Turso/libSQL Relational Schema initialized (registrations, registration_events, participants, players, payments, events).');
       return true;
     } catch (err) {
       console.error('⚠️ Database schema initialization warning:', err.message);
@@ -185,7 +242,7 @@ async function initDb() {
 }
 
 /**
- * Health Check Helper - Performs a live SELECT 1 against Turso
+ * Health Check Helper
  */
 async function testDbConnection() {
   try {

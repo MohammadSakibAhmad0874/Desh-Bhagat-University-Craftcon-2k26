@@ -4,4 +4,6 @@ node_modules/
 *.log
 .DS_Store
 scratch/
+main_hackathon/
+
 
