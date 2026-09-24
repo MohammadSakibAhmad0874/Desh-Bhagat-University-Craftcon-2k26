@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initRegistrationModal();
   initAudioAmbiance();
   initBrochureAction();
+  initPolicyModals();
 });
 
 /* ==========================================================================
@@ -1594,22 +1595,39 @@ function initCodexTabs() {
 function initRegistrationModal() {
   const modal = document.getElementById('register-modal');
   const openBtns = document.querySelectorAll('.open-modal-btn');
-  const closeBtn = document.querySelector('.modal-close-btn');
+  // Target only the hackathon modal's close button (not the gaming wizard's)
+  const closeBtn = modal ? modal.querySelector('.modal-close-btn') : null;
   const doneBtn = document.getElementById('modal-done-btn');
   const regForm = document.getElementById('hacker-reg-form');
 
   const stepForm = document.getElementById('modal-step-form');
+  const stepPayment = document.getElementById('modal-step-payment');
   const stepTicket = document.getElementById('modal-step-ticket');
   const printPassBtn = document.getElementById('download-pass-btn');
 
   if (!modal) return;
 
-  function openModal(e) {
+  function openModal(e, preselectedTrack) {
     if (e) e.preventDefault();
+    // Reset form view — always start at step 1 (form)
+    if (stepForm) { stepForm.classList.add('active'); }
+    if (stepPayment) { stepPayment.classList.remove('active'); }
+    if (stepTicket) { stepTicket.classList.remove('active'); }
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     document.body.style.overflow = 'hidden';
     playMinecraftSound('pop');
+    // Pre-select track if provided
+    if (preselectedTrack) {
+      const trackSelect = document.getElementById('primary-track');
+      if (trackSelect) {
+        const options = Array.from(trackSelect.options);
+        const match = options.find(opt => opt.value === preselectedTrack || opt.value.toLowerCase().includes(preselectedTrack.toLowerCase().split(':')[0].trim().toLowerCase()));
+        if (match) {
+          trackSelect.value = match.value;
+        }
+      }
+    }
   }
 
   function closeModal() {
@@ -1618,7 +1636,63 @@ function initRegistrationModal() {
     document.body.style.overflow = '';
   }
 
-  openBtns.forEach((btn) => btn.addEventListener('click', openModal));
+  openBtns.forEach((btn) => btn.addEventListener('click', (e) => openModal(e, null)));
+
+  // Track cards: clicking opens the modal with that track pre-selected
+  document.querySelectorAll('.track-card').forEach(card => {
+    card.style.cursor = 'pointer';
+    card.addEventListener('click', (e) => {
+      const trackName = card.querySelector('.track-name');
+      const biomePill = card.querySelector('.biome-pill');
+      let preselectedTrack = null;
+      if (biomePill) {
+        const biomeText = biomePill.textContent.trim();
+        if (biomeText.includes('THE END')) preselectedTrack = 'The End: AI & Agentic Workflows';
+        else if (biomeText.includes('OVERWORLD')) preselectedTrack = 'The Overworld: Sustainability & AgriTech';
+        else if (biomeText.includes('REDSTONE')) preselectedTrack = 'Redstone Lab: IoT & Hardware';
+        else if (biomeText.includes('DEEP DARK')) preselectedTrack = 'The Deep Dark: Cybersecurity & Web3';
+        else if (biomeText.includes('NETHER')) preselectedTrack = 'The Nether: FinTech & High-Scale';
+        else if (biomeText.includes('SANDBOX')) preselectedTrack = 'Open Sandbox: Wildcard & Civic';
+      }
+      openModal(e, preselectedTrack);
+    });
+  });
+
+  // Subevent chips on the arenas section: clicking opens modal with track pre-selected
+  document.querySelectorAll('.arena-card-hackathon .subevent-chip').forEach((chip, idx) => {
+    chip.style.cursor = 'pointer';
+    chip.title = 'Click to register for this track';
+    const trackValues = [
+      'The End: AI & Agentic Workflows',
+      'The Overworld: Sustainability & AgriTech',
+      'Redstone Lab: IoT & Hardware',
+      'The Deep Dark: Cybersecurity & Web3',
+      'The Nether: FinTech & High-Scale',
+      'Open Sandbox: Wildcard & Civic'
+    ];
+    chip.addEventListener('click', (e) => {
+      openModal(e, trackValues[idx] || null);
+    });
+  });
+
+  // Gaming tournament chips on the arenas section: clicking opens gaming registration modal
+  document.querySelectorAll('.arena-card-gaming .subevent-chip, .open-gaming-reg-btn').forEach((chip) => {
+    chip.style.cursor = 'pointer';
+    chip.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const presetGame = chip.getAttribute('data-preset-game') || 'BGMI';
+      if (typeof window.openGamingModalForGame === 'function') {
+        window.openGamingModalForGame(presetGame);
+      } else {
+        const gamingModal = document.getElementById('gaming-registration-modal');
+        if (gamingModal) {
+          gamingModal.classList.add('active');
+          document.body.style.overflow = 'hidden';
+        }
+      }
+    });
+  });
 
   if (closeBtn) closeBtn.addEventListener('click', closeModal);
   if (doneBtn) doneBtn.addEventListener('click', closeModal);
@@ -1692,37 +1766,49 @@ function initRegistrationModal() {
           throw new Error(data.error || `Server responded with status ${response.status}. Please try again.`);
         }
 
-        // Use the pass ID from the database response
-        const passId = (data.registration && data.registration.pass_id) 
-          ? data.registration.pass_id 
-          : `CFT-${Math.floor(1000 + Math.random() * 9000)}-DBU`;
+        // Store registration ID for payment step
+        const registrationId = (data.registration && data.registration.registration_id)
+          ? data.registration.registration_id
+          : (data.registrationId || `CRAFT26-HACKATHON-${Math.random().toString(36).slice(2,8).toUpperCase()}`);
 
-        // Populate and generate hall ticket pass
-        document.getElementById('pass-team-name').textContent = teamName;
-        document.getElementById('pass-leader-name').textContent = leaderName;
-        document.getElementById('pass-team-size').textContent = `${teamSize} Crafters`;
-        document.getElementById('pass-track-name').textContent = track.split('—')[1]?.trim() || track;
-        document.getElementById('pass-unique-id').textContent = passId;
+        const passId = (data.registration && data.registration.pass_id)
+          ? data.registration.pass_id
+          : registrationId;
 
-        // Switch View to Ticket Celebration
+        // Store on modal element for payment step access
+        modal.dataset.registrationId = registrationId;
+        modal.dataset.passId = passId;
+        modal.dataset.teamName = teamName;
+        modal.dataset.leaderName = leaderName;
+        modal.dataset.teamSize = teamSize;
+        modal.dataset.track = track;
+
+        // Update payment step with team details and amount
+        const totalFee = parseInt(teamSize, 10) * 300;
+        const payTeamEl = document.getElementById('pay-team-name-display');
+        const paySizeEl = document.getElementById('pay-size-display');
+        const payAmountEl = document.getElementById('pay-amount-display');
+        if (payTeamEl) payTeamEl.textContent = teamName;
+        if (paySizeEl) paySizeEl.textContent = `${teamSize} builder${teamSize > 1 ? 's' : ''}`;
+        if (payAmountEl) payAmountEl.textContent = `\u20B9${totalFee.toLocaleString('en-IN')}`;
+
+        // Update QR and UPI ID from config if available
+        fetch('/api/config').then(r => r.json()).then(cfg => {
+          if (cfg && cfg.success) {
+            const qrImg = document.getElementById('hack-qr-img');
+            const upiIdEl = document.getElementById('hack-upi-id-display');
+            if (qrImg && cfg.upiQrUrl) qrImg.src = cfg.upiQrUrl;
+            if (upiIdEl && cfg.upiId) upiIdEl.textContent = cfg.upiId;
+          }
+        }).catch(() => {});
+
+        // Switch to Payment Step
         stepForm.classList.remove('active');
-        stepTicket.classList.add('active');
+        if (stepPayment) stepPayment.classList.add('active');
+        playMinecraftSound('pop');
 
-        playMinecraftSound('level_up');
-
-        // 3D Entrance on Ticket
-        if (typeof gsap !== 'undefined') {
-          gsap.from('#digital-pass-card', {
-            scale: 0.85,
-            rotationY: 15,
-            opacity: 0,
-            duration: 0.6,
-            ease: 'back.out(1.7)'
-          });
-        }
       } catch (err) {
         console.error('Registration flow error:', err);
-        // Show error to user
         if (errorBox) {
           errorBox.textContent = err.message || 'Registration failed. Please try again.';
           errorBox.style.display = 'block';
@@ -1730,9 +1816,318 @@ function initRegistrationModal() {
       } finally {
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.innerHTML = `<span>GENERATE HACKER TICKET</span>
+          submitBtn.innerHTML = `<span>PROCEED TO PAYMENT &#8594;</span>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>`;
         }
+      }
+    });
+  }
+
+  // Helper to render digital ticket pass upon confirmed payment
+  function renderHackathonTicket(regId, tName, lName, tSize, trackVal) {
+    const passId = modal.dataset.passId || regId;
+    const passTeamEl = document.getElementById('pass-team-name');
+    const passLeaderEl = document.getElementById('pass-leader-name');
+    const passSizeEl = document.getElementById('pass-team-size');
+    const passTrackEl = document.getElementById('pass-track-name');
+    const passIdEl = document.getElementById('pass-unique-id');
+
+    if (passTeamEl) passTeamEl.textContent = tName;
+    if (passLeaderEl) passLeaderEl.textContent = lName;
+    if (passSizeEl) passSizeEl.textContent = `${tSize} Member${parseInt(tSize, 10) > 1 ? 's' : ''}`;
+    if (passTrackEl) {
+      const cleanTrack = trackVal.replace(/^Track\s+\d+\s*[\u2014\-:]+\s*/i, '').split(/[\u2014\u2013\u2014]/)[0]?.trim() || trackVal;
+      passTrackEl.textContent = cleanTrack;
+    }
+    if (passIdEl) passIdEl.textContent = passId;
+
+    // Generate barcode
+    const barcodeContainer = document.getElementById('barcode-bars');
+    if (barcodeContainer) {
+      barcodeContainer.innerHTML = '';
+      const seed = passId.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+      const barPatterns = [2, 4, 1, 3, 2, 5, 1, 3, 2, 4, 1, 2, 3, 5, 1, 2, 4, 1, 3, 2, 5, 1, 4, 2, 3, 1, 5, 2, 4, 1, 3, 2, 4, 1, 5, 2, 3];
+      barPatterns.forEach((w, i) => {
+        const bar = document.createElement('div');
+        bar.className = 'barcode-bar';
+        const actualW = ((seed + i * 7) % 3 === 0) ? Math.max(1, w - 1) : ((seed + i * 3) % 5 === 0 ? 1 : w);
+        bar.style.width = actualW + 'px';
+        bar.style.opacity = (seed + i) % 4 === 0 ? '0.4' : '1';
+        barcodeContainer.appendChild(bar);
+      });
+    }
+
+    // Switch view to ticket
+    if (stepPayment) stepPayment.classList.remove('active');
+    if (stepTicket) stepTicket.classList.add('active');
+    playMinecraftSound('level_up');
+
+    if (typeof gsap !== 'undefined') {
+      gsap.from('#digital-pass-card', { scale: 0.85, rotationY: 15, opacity: 0, duration: 0.6, ease: 'back.out(1.7)' });
+    }
+  }
+
+  // -------- RAZORPAY AUTOMATED PAYMENT GATEWAY --------
+  const hackRzpBtn = document.getElementById('hack-btn-pay-razorpay');
+  const hackRzpLoading = document.getElementById('hack-rzp-loading');
+  const hackRzpErrorBox = document.getElementById('hack-rzp-error-box');
+
+  if (hackRzpBtn) {
+    hackRzpBtn.addEventListener('click', async () => {
+      const registrationId = modal.dataset.registrationId;
+      const teamName = modal.dataset.teamName || 'Hackathon Squad';
+      const leaderName = modal.dataset.leaderName || 'Team Leader';
+      const teamSize = modal.dataset.teamSize || '1';
+      const track = modal.dataset.track || 'Open Sandbox';
+
+      const emailInput = document.getElementById('reg-leader-email');
+      const phoneInput = document.getElementById('reg-leader-phone');
+      const collegeInput = document.getElementById('reg-college');
+
+      const leaderEmail = emailInput ? emailInput.value.trim() : '';
+      const leaderPhone = phoneInput ? phoneInput.value.trim() : '';
+      const collegeName = collegeInput ? collegeInput.value.trim() : '';
+
+      if (hackRzpErrorBox) {
+        hackRzpErrorBox.style.display = 'none';
+        hackRzpErrorBox.textContent = '';
+      }
+
+      const btnLabel = document.getElementById('hack-rzp-btn-label');
+      hackRzpBtn.disabled = true;
+      if (btnLabel) btnLabel.textContent = '⏳ CREATING SECURE ORDER...';
+      if (hackRzpLoading) hackRzpLoading.style.display = 'block';
+
+      try {
+        const orderRes = await fetch('/api/payments/create-order', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            registrationId: registrationId,
+            eventId: 'HACKATHON',
+            gameId: 'HACKATHON',
+            category: 'HACKATHON',
+            teamName: teamName,
+            college: collegeName,
+            team_size: teamSize,
+            captain: {
+              name: leaderName,
+              email: leaderEmail,
+              phone: leaderPhone
+            }
+          })
+        });
+
+        const orderData = await orderRes.json();
+        if (hackRzpLoading) hackRzpLoading.style.display = 'none';
+
+        if (!orderData.success || !orderData.orderId) {
+          throw new Error(orderData.error || 'Failed to create payment order. Please try again.');
+        }
+
+        if (typeof Razorpay === 'undefined') {
+          throw new Error('Razorpay SDK failed to load. Please verify your connection or use UPI transfer.');
+        }
+
+        const options = {
+          key: orderData.keyId,
+          amount: orderData.amount,
+          currency: 'INR',
+          name: "CRAFTCON '26 — Desh Bhagat University",
+          description: `Squad Pass: ${teamName} (${teamSize} Builders)`,
+          order_id: orderData.orderId,
+          prefill: {
+            name: leaderName,
+            email: leaderEmail,
+            contact: leaderPhone
+          },
+          notes: {
+            registrationId: registrationId,
+            category: 'HACKATHON',
+            teamName: teamName,
+            college: collegeName
+          },
+          theme: {
+            color: '#2563eb'
+          },
+          modal: {
+            ondismiss: function () {
+              hackRzpBtn.disabled = false;
+              if (btnLabel) btnLabel.textContent = '💳 PAY NOW WITH RAZORPAY';
+              if (hackRzpLoading) hackRzpLoading.style.display = 'none';
+            }
+          },
+          handler: async function (response) {
+            try {
+              if (btnLabel) btnLabel.textContent = '✅ VERIFYING PAYMENT...';
+              hackRzpBtn.disabled = true;
+
+              const verifyRes = await fetch('/api/payments/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  registrationId: registrationId,
+                  orderId: response.razorpay_order_id,
+                  paymentId: response.razorpay_payment_id,
+                  signature: response.razorpay_signature,
+                  registrationData: {
+                    gameId: 'HACKATHON',
+                    category: 'HACKATHON',
+                    teamName: teamName,
+                    college: collegeName,
+                    captain: { name: leaderName, email: leaderEmail, phone: leaderPhone }
+                  }
+                })
+              });
+
+              const verifyData = await verifyRes.json();
+
+              if (verifyData && verifyData.success) {
+                renderHackathonTicket(registrationId, teamName, leaderName, teamSize, track);
+              } else {
+                throw new Error(verifyData.error || 'Payment verification failed.');
+              }
+            } catch (vErr) {
+              console.error('Razorpay verification error:', vErr);
+              if (hackRzpErrorBox) {
+                hackRzpErrorBox.textContent = `Verification error: ${vErr.message || 'Payment unconfirmed'}. Payment ID: ${response.razorpay_payment_id}`;
+                hackRzpErrorBox.style.display = 'block';
+              }
+              hackRzpBtn.disabled = false;
+              if (btnLabel) btnLabel.textContent = '💳 RETRY VERIFICATION';
+            }
+          }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+
+      } catch (err) {
+        console.error('Razorpay checkout initiation error:', err);
+        if (hackRzpErrorBox) {
+          hackRzpErrorBox.textContent = err.message || 'Payment initialization failed. Please use manual UPI QR.';
+          hackRzpErrorBox.style.display = 'block';
+        }
+        hackRzpBtn.disabled = false;
+        if (btnLabel) btnLabel.textContent = '💳 PAY NOW WITH RAZORPAY';
+        if (hackRzpLoading) hackRzpLoading.style.display = 'none';
+      }
+    });
+  }
+
+  // -------- PAYMENT PROOF FORM (hack-upi-proof-form) --------
+  const hackPayForm = document.getElementById('hack-upi-proof-form');
+  const hackBackBtn = document.getElementById('hack-pay-back-btn');
+  const hackCopyUpiBtn = document.getElementById('hack-copy-upi-btn');
+  const hackScreenshotInput = document.getElementById('hack-screenshot-input');
+  const hackScreenshotLabel = document.getElementById('hack-screenshot-label-text');
+  const hackScreenshotPreview = document.getElementById('hack-screenshot-preview');
+  const hackScreenshotImg = document.getElementById('hack-screenshot-img');
+  let hackBase64Screenshot = null;
+
+  // Copy UPI ID
+  if (hackCopyUpiBtn) {
+    hackCopyUpiBtn.addEventListener('click', () => {
+      const upiText = document.getElementById('hack-upi-id-display')?.textContent || 'paytm.s2sp1kq@pty';
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(upiText).then(() => {
+          const orig = hackCopyUpiBtn.textContent;
+          hackCopyUpiBtn.textContent = 'COPIED!';
+          setTimeout(() => { hackCopyUpiBtn.textContent = orig; }, 2000);
+        });
+      }
+    });
+  }
+
+  // Screenshot upload preview
+  if (hackScreenshotInput) {
+    hackScreenshotInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) {
+        alert('File too large (max 10MB). Please compress your screenshot.');
+        hackScreenshotInput.value = '';
+        hackBase64Screenshot = null;
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        hackBase64Screenshot = ev.target.result;
+        if (hackScreenshotImg) hackScreenshotImg.src = hackBase64Screenshot;
+        if (hackScreenshotPreview) hackScreenshotPreview.style.display = 'block';
+        if (hackScreenshotLabel) hackScreenshotLabel.textContent = file.name;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Back button: payment step -> form step
+  if (hackBackBtn) {
+    hackBackBtn.addEventListener('click', () => {
+      if (stepPayment) stepPayment.classList.remove('active');
+      if (stepForm) stepForm.classList.add('active');
+    });
+  }
+
+  // Payment proof submission
+  if (hackPayForm) {
+    hackPayForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const utrInput = document.getElementById('hack-utr-input');
+      const utrValue = utrInput ? utrInput.value.trim() : '';
+      const hackPayErrorBox = document.getElementById('hack-pay-error-box');
+      const hackSubmitBtn = document.getElementById('hack-submit-proof-btn');
+
+      if (hackPayErrorBox) { hackPayErrorBox.style.display = 'none'; hackPayErrorBox.textContent = ''; }
+
+      if (!utrValue || utrValue.length < 6) {
+        if (hackPayErrorBox) { hackPayErrorBox.textContent = 'Please enter a valid UTR / Transaction ID (min 6 characters).'; hackPayErrorBox.style.display = 'block'; }
+        return;
+      }
+      if (!hackBase64Screenshot) {
+        if (hackPayErrorBox) { hackPayErrorBox.textContent = 'Please upload a screenshot of your payment receipt.'; hackPayErrorBox.style.display = 'block'; }
+        return;
+      }
+
+      const registrationId = modal.dataset.registrationId;
+      if (!registrationId) {
+        if (hackPayErrorBox) { hackPayErrorBox.textContent = 'Registration not found. Please go back and re-submit the form.'; hackPayErrorBox.style.display = 'block'; }
+        return;
+      }
+
+      if (hackSubmitBtn) { hackSubmitBtn.disabled = true; hackSubmitBtn.innerHTML = '<span>⏳ SUBMITTING PROOF...</span>'; }
+
+      try {
+        const res = await fetch('/api/payments/submit-proof', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            registrationId: registrationId,
+            utr: utrValue,
+            utrTransactionId: utrValue,
+            screenshot: hackBase64Screenshot,
+            paymentScreenshotUrl: hackBase64Screenshot
+          })
+        });
+
+        let proofData = {};
+        try { proofData = await res.json(); } catch (_) {}
+
+        if (res.ok && proofData.success) {
+          const tName = modal.dataset.teamName || '';
+          const lName = modal.dataset.leaderName || '';
+          const tSize = modal.dataset.teamSize || '1';
+          const trackVal = modal.dataset.track || '';
+          renderHackathonTicket(registrationId, tName, lName, tSize, trackVal);
+        } else {
+          const errMsg = (proofData && proofData.error) ? proofData.error : `Server returned HTTP ${res.status}`;
+          if (hackPayErrorBox) { hackPayErrorBox.textContent = `Submission error: ${errMsg}`; hackPayErrorBox.style.display = 'block'; }
+          if (hackSubmitBtn) { hackSubmitBtn.disabled = false; hackSubmitBtn.innerHTML = '<span>&#9989; SUBMIT & CONFIRM REGISTRATION</span>'; }
+        }
+      } catch (netErr) {
+        console.error('Payment proof submission error:', netErr);
+        if (hackPayErrorBox) { hackPayErrorBox.textContent = 'Network error. Please try again.'; hackPayErrorBox.style.display = 'block'; }
+        if (hackSubmitBtn) { hackSubmitBtn.disabled = false; hackSubmitBtn.innerHTML = '<span>&#9989; SUBMIT & CONFIRM REGISTRATION</span>'; }
       }
     });
   }
@@ -1865,5 +2260,145 @@ function initBrochureAction() {
       note.style.opacity = '0';
       setTimeout(() => note.remove(), 300);
     }, 3800);
+  });
+}
+
+/* ==========================================================================
+   23. RAZORPAY COMPLIANCE & LEGAL POLICY MODALS
+   ========================================================================== */
+function initPolicyModals() {
+  const modal = document.getElementById('policy-modal');
+  const closeBtn = document.getElementById('policy-close-btn');
+  const badgeEl = document.getElementById('policy-badge-text');
+  const titleEl = document.getElementById('policy-modal-title');
+  const contentEl = document.getElementById('policy-modal-content');
+  const links = document.querySelectorAll('[data-policy]');
+
+  if (!modal || !contentEl) return;
+
+  const policies = {
+    terms: {
+      badge: 'TERMS & CONDITIONS',
+      title: "CRAFTCON '26 Participation Terms",
+      html: `
+        <p>Welcome to <strong>CRAFTCON '26</strong>, organized and hosted by <strong>Desh Bhagat University</strong> (Mandi Gobindgarh, Punjab, India). By registering for the 24-Hour Hackathon or the Gaming Arena, you agree to the following terms:</p>
+        <h3>1. Eligibility & Registration</h3>
+        <ul>
+          <li>Participants must be actively enrolled undergraduate or postgraduate college/university students with valid institutional student IDs.</li>
+          <li>Hackathon squads consist of 1 to 4 crafters. Registration for the flagship hackathon is <strong>100% Free</strong>.</li>
+          <li>Gaming Arena tournament slots require registration per squad or solo as specified per game. Registrations are confirmed upon transaction verification.</li>
+        </ul>
+        <h3>2. Code of Conduct & Fair Play</h3>
+        <ul>
+          <li>All hackathon code, architecture, and prototypes must be initiated and crafted during the designated 24-hour event sprint. Pre-existing templates or plagiarism will result in immediate disqualification.</li>
+          <li>For esports tournaments (BGMI, Free Fire, MLBB, Chess, Ludo, Carrom), strictly no emulators, hacks, third-party scripting, or unsportsmanlike conduct is permitted.</li>
+        </ul>
+        <h3>3. Intellectual Property</h3>
+        <p>All intellectual property created during CRAFTCON '26 remains <strong>100% the property of the participating teams</strong>. The organizers retain only the right to feature project demos and highlights for educational and promotional showcases.</p>
+        <h3>4. Jurisdiction</h3>
+        <p>Any disputes arising under these terms shall be subject to the exclusive jurisdiction of the competent courts in Fatehgarh Sahib / Mandi Gobindgarh, Punjab, India.</p>
+      `
+    },
+    privacy: {
+      badge: 'PRIVACY POLICY',
+      title: 'Data Privacy & Security Guarantee',
+      html: `
+        <p>At <strong>Desh Bhagat University</strong> and <strong>CRAFTCON '26</strong>, we take the confidentiality and privacy of our student participants with the utmost seriousness.</p>
+        <h3>1. Information Collected</h3>
+        <p>We collect essential registration details including participant names, email addresses, contact phone/WhatsApp numbers, college affiliations, and gaming in-game identifiers (UID/IGN).</p>
+        <h3>2. Purpose & Use of Data</h3>
+        <ul>
+          <li>Issuing personalized digital admission tickets and squad inventory passes.</li>
+          <li>Sending critical scheduling notices, hackathon tracks announcements, and tournament brackets.</li>
+          <li>Syncing verified records securely to official administrative Google Sheets and encrypted institutional databases.</li>
+        </ul>
+        <h3>3. Protection & Non-Disclosure</h3>
+        <p>We do <strong>not</strong> sell, lease, rent, or trade participant data with third-party advertising brokers. Payment transaction details processed via Razorpay or UPI are handled securely according to RBI guidelines and bank-grade SSL/TLS 256-bit encryption.</p>
+      `
+    },
+    refund: {
+      badge: 'REFUND & CANCELLATION',
+      title: 'Transparent Refund & Cancellation Policy',
+      html: `
+        <p>This Refund & Cancellation Policy governs all registrations and transaction payments conducted for <strong>CRAFTCON '26</strong> at Desh Bhagat University.</p>
+        <h3>1. Flagship 24-Hour Hackathon</h3>
+        <p>The flagship hackathon is <strong>100% Free of Cost</strong> with zero entry fees. Therefore, no refunds or fee adjustments apply.</p>
+        <h3>2. Gaming Arena Registrations</h3>
+        <ul>
+          <li><strong>Participant Cancellation:</strong> Registered players or squad leaders may cancel their gaming entry and request a <strong>100% full refund</strong> up to 48 hours prior to tournament bracket locking (i.e. before October 22, 2026, 11:59 PM IST) by contacting <a href="mailto:contact@craftcon2026.edu" style="color: #bb65ff;">contact@craftcon2026.edu</a> with their Registration ID.</li>
+          <li><strong>Event Postponement or Cancellation:</strong> In the rare event that any tournament, match, or track is cancelled or rescheduled by Desh Bhagat University, registered squads will automatically receive a <strong>100% full refund</strong> processed to their original payment source within <strong>5 to 7 business days</strong>.</li>
+          <li><strong>Duplicate Transactions:</strong> Any accidental duplicate payments will be refunded in full upon submission of the transaction UTR number within 48 hours.</li>
+        </ul>
+      `
+    },
+    delivery: {
+      badge: 'DELIVERY & FULFILLMENT',
+      title: 'Digital Pass Delivery & Service Fulfillment',
+      html: `
+        <p><strong>CRAFTCON '26</strong> operates as an educational hackathon and esports collegiate conference. No physical merchandise or tangibles are shipped via courier.</p>
+        <h3>1. Electronic Pass Issuance</h3>
+        <ul>
+          <li>Upon successful completion of the registration form and fee verification, a unique digital <strong>Squad Pass / Admit Ticket</strong> is immediately generated on-screen with your Registration ID and barcode.</li>
+          <li>An electronic confirmation receipt is simultaneously dispatched to the registered leader's email address.</li>
+        </ul>
+        <h3>2. On-Campus Check-In</h3>
+        <p>Present your digital ticket (on mobile or printed) along with your college photo ID card at the Desh Bhagat University registration desk on the event morning (October 24, 2026) to collect your physical event kit, badge, and meal tokens.</p>
+      `
+    },
+    contact: {
+      badge: 'CONTACT & GRIEVANCE',
+      title: 'Official Merchant & Institutional Coordinates',
+      html: `
+        <p>For inquiries, support, sponsorship, or payment grievance redressal, please reach our official event coordination desk:</p>
+        <h3>Host Institution</h3>
+        <p><strong>Desh Bhagat University</strong><br>
+        Faculty of Computing, Information Technology & Student Affairs<br>
+        Amloh Road, Mandi Gobindgarh, District Fatehgarh Sahib,<br>
+        Punjab – 147301, India.</p>
+        <h3>Direct Support Channels</h3>
+        <ul>
+          <li><strong>Official Email:</strong> <a href="mailto:contact@craftcon2026.edu" style="color: #bb65ff;">contact@craftcon2026.edu</a></li>
+          <li><strong>Administrative Email:</strong> <a href="mailto:admin@craftcon2026.edu" style="color: #bb65ff;">admin@craftcon2026.edu</a></li>
+          <li><strong>Helpline & WhatsApp:</strong> <a href="tel:+918797330646" style="color: #bb65ff;">+91 87973 30646</a> / <a href="tel:+919475002048" style="color: #bb65ff;">+91 94750 02048</a></li>
+          <li><strong>Operating Hours:</strong> Monday – Saturday, 9:00 AM – 5:00 PM IST</li>
+        </ul>
+      `
+    }
+  };
+
+  function openPolicy(policyKey) {
+    const data = policies[policyKey] || policies.terms;
+    if (badgeEl) badgeEl.textContent = data.badge;
+    if (titleEl) titleEl.textContent = data.title;
+    contentEl.innerHTML = data.html;
+
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    playMinecraftSound('pop');
+  }
+
+  function closePolicy() {
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.style.overflow = '';
+  }
+
+  links.forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const policyKey = link.getAttribute('data-policy') || 'terms';
+      openPolicy(policyKey);
+    });
+  });
+
+  if (closeBtn) closeBtn.addEventListener('click', closePolicy);
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closePolicy();
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('open')) closePolicy();
   });
 }

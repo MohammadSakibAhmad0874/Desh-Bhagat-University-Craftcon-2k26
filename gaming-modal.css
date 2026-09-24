@@ -1,0 +1,357 @@
+/* ==========================================================================
+   CRAFTCON '26 — GAMING REGISTRATION MODAL STYLES
+   Self-contained modal design for seamless integration into index.html & gaming.html
+   ========================================================================== */
+
+.gaming-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(5, 5, 10, 0.92);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.gaming-modal-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.gaming-modal-container {
+  width: 100%;
+  max-width: 760px;
+  max-height: 92vh;
+  background: #0d0d16;
+  border: 1px solid rgba(255, 0, 84, 0.4);
+  border-radius: 14px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 30px rgba(255, 0, 84, 0.25);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  transform: scale(0.96);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: 'Space Grotesk', -apple-system, sans-serif;
+  color: #ffffff;
+}
+
+.gaming-modal-overlay.active .gaming-modal-container {
+  transform: scale(1);
+}
+
+.wizard-header {
+  padding: 18px 24px;
+  background: #08080e;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.wizard-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.wizard-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: 0.03em;
+}
+
+.gaming-modal-container .modal-close-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #d1d5db;
+  font-size: 1.5rem;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.gaming-modal-container .modal-close-btn:hover {
+  background: rgba(255, 0, 84, 0.2);
+  border-color: #ff0054;
+  color: #ffffff;
+}
+
+.wizard-progress-bar-wrap {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.wizard-progress-fill {
+  height: 100%;
+  width: 16.66%;
+  background: linear-gradient(90deg, #ff0054 0%, #ffbe0b 100%);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.wizard-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: calc(92vh - 140px);
+}
+
+.wizard-step-pane {
+  display: none;
+}
+
+.wizard-step-pane.active {
+  display: block;
+  animation: fadeInStep 0.25s ease-out;
+}
+
+@keyframes fadeInStep {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.step-subtitle {
+  color: #9ca3af;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+}
+
+/* Category & Game Cards */
+.category-select-grid,
+.game-select-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.category-option-card,
+.game-select-card {
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.category-option-card:hover,
+.game-select-card:hover {
+  border-color: #ff0054;
+  background: rgba(255, 0, 84, 0.06);
+  transform: translateY(-2px);
+}
+
+.category-option-card.selected,
+.game-select-card.selected {
+  border-color: #ff0054;
+  background: rgba(255, 0, 84, 0.12);
+  box-shadow: 0 0 20px rgba(255, 0, 84, 0.3);
+}
+
+.cat-icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.cat-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #ffffff;
+}
+
+.cat-badge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  color: #ff0054;
+  background: rgba(255, 0, 84, 0.15);
+}
+
+/* Forms in wizard */
+.form-group-wrap {
+  margin-bottom: 16px;
+}
+
+.form-label-custom {
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #d1d5db;
+  margin-bottom: 6px;
+}
+
+.input-field-custom {
+  width: 100%;
+  padding: 11px 14px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-field-custom:focus {
+  border-color: #ff0054;
+  box-shadow: 0 0 0 2px rgba(255, 0, 84, 0.25);
+}
+
+.price-summary-box {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(255, 0, 84, 0.1) 0%, rgba(245, 166, 35, 0.08) 100%);
+  border: 1px solid rgba(255, 0, 84, 0.3);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 18px;
+}
+
+.price-breakdown-text {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.price-total-val {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #2ed573;
+  font-family: 'Space Grotesk', monospace;
+}
+
+/* Wizard Buttons */
+.wizard-footer {
+  padding: 16px 24px;
+  background: #08080e;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.btn-gaming-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  background: linear-gradient(135deg, #ff0054 0%, #d90429 100%);
+  border: 1px solid #ff4d6d;
+  color: #ffffff;
+  border-radius: 8px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.btn-gaming-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 0, 84, 0.4);
+}
+
+.btn-gaming-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border-radius: 8px;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-gaming-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.btn-gaming-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #9ca3af;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-gaming-ghost:hover {
+  color: #ffffff;
+}
+
+/* Printable Voucher Card */
+.voucher-card {
+  background: linear-gradient(145deg, #12101e 0%, #090812 100%);
+  border: 2px solid #ff0054;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(255, 0, 84, 0.25);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.voucher-reg-id {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: #f5a623;
+  letter-spacing: 0.08em;
+  margin: 10px 0;
+  font-family: monospace;
+}
+
+@media (max-width: 640px) {
+  .category-select-grid,
+  .game-select-grid {
+    grid-template-columns: 1fr;
+  }
+  .gaming-modal-container {
+    max-height: 96vh;
+  }
+  .wizard-body {
+    padding: 16px;
+  }
+}

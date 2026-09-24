@@ -35,6 +35,7 @@
   <script src="https://unpkg.com/lenis@1.1.9/dist/lenis.min.js" defer></script>
 
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="gaming-modal.css">
 </head>
 
 <body class="smooth-scroll-body">
@@ -53,10 +54,10 @@
   <header id="site-header" class="site-header">
     <div class="header-container">
       <!-- Wordmark Logo -->
-      <a href="#hero" class="brand-wordmark" aria-label="CRAFTCON '26 Home">
+      <a href="#arenas" class="brand-wordmark" aria-label="CRAFTCON '26 Home">
         <span class="nav-dbu-badge" title="Desh Bhagat University (NAAC A+)">
-          <img src="assets/images/dbu_logo_cropped.png" alt="Desh Bhagat University Logo" class="nav-dbu-img" width="30"
-            height="30" loading="eager">
+          <img src="assets/images/dbu_logo_cropped.png" alt="Desh Bhagat University Logo" class="nav-dbu-img" width="44"
+            height="44" loading="eager">
         </span>
         <span class="brand-cube"></span>
         <span class="brand-text">CRAFTCON<span class="brand-year">'26</span></span>
@@ -66,14 +67,13 @@
       <!-- Desktop Nav Links -->
       <nav class="desktop-nav" aria-label="Main Navigation">
         <ul class="nav-links">
-          <li><a href="#about" class="nav-link">ABOUT</a></li>
-          <li><a href="#tracks" class="nav-link">TRACKS</a></li>
-          <li><a href="#timeline" class="nav-link">TIMELINE</a></li>
+          <li><a href="#arenas" class="nav-link" style="color: #d8b4fe; font-weight: 700;">ARENAS</a></li>
+          <li><a href="#tracks" class="nav-link">HACKATHON</a></li>
+          <li><a href="gaming.html" class="nav-link nav-gaming-highlight" style="color: #ff0054; font-weight: 700;">🎮 GAMING</a></li>
+          <li><a href="#timeline" class="nav-link">SCHEDULE</a></li>
           <li><a href="#prizes" class="nav-link">PRIZES</a></li>
-          <li><a href="#rules" class="nav-link">RULES</a></li>
-          <li><a href="#sponsors" class="nav-link">SPONSORS</a></li>
           <li><a href="#faq" class="nav-link">FAQ</a></li>
-          <li><a href="gaming.html" class="nav-link nav-gaming-highlight" style="color: #ff0054; font-weight: 700;">🎮 GAMING ARENA</a></li>
+          <li><a href="#policies-anchor" class="nav-link" style="color: #a78bfa;">POLICIES</a></li>
         </ul>
       </nav>
 
@@ -102,15 +102,7 @@
           </svg>
         </button>
 
-        <!-- GitHub Profile Link -->
-        <a href="https://github.com/Aryan772005" target="_blank" rel="noopener noreferrer" class="nav-github-pill"
-          aria-label="Aryan's GitHub Profile" title="GitHub: Aryan772005">
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-            <path
-              d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12.017C22 6.484 17.522 2 12 2Z" />
-          </svg>
-          <span class="nav-gh-text">GitHub</span>
-        </a>
+        <!-- GitHub Profile Link Removed -->
 
         <a href="#register" class="pill-cta-btn open-modal-btn" data-modal="register-modal">
           <span class="btn-text-full">REGISTER NOW</span>
@@ -142,113 +134,202 @@
         </div>
       </div>
       <ul class="mobile-nav-links">
-        <li><a href="#about" class="mobile-link">ABOUT</a></li>
-        <li><a href="#tracks" class="mobile-link">TRACKS</a></li>
-        <li><a href="#timeline" class="mobile-link">TIMELINE</a></li>
-        <li><a href="#prizes" class="mobile-link">PRIZES & LOOT</a></li>
+        <li><a href="#arenas" class="mobile-link" style="color: #d8b4fe; font-weight: 700;">DUAL ARENAS (HOME)</a></li>
+        <li><a href="#tracks" class="mobile-link">HACKATHON (6 TRACKS)</a></li>
+        <li><a href="gaming.html" class="mobile-link" style="color: #ff0054; font-weight: 700;">🎮 GAMING ARENA (6 GAMES) ↗</a></li>
+        <li><a href="#timeline" class="mobile-link">SCHEDULE & TIMELINE</a></li>
+        <li><a href="#prizes" class="mobile-link">PRIZES & BOUNTY</a></li>
         <li><a href="#rules" class="mobile-link">RULES & CRITERIA</a></li>
-        <li><a href="#sponsors" class="mobile-link">SPONSORS</a></li>
-        <li><a href="#organizers" class="mobile-link">ORGANIZERS</a></li>
-        <li><a href="#faq" class="mobile-link">FAQ</a></li>
-        <li><a href="gaming.html" class="mobile-link" style="color: #ff0054; font-weight: 700;">🎮 GAMING ARENA ↗</a></li>
-        <li><a href="https://github.com/Aryan772005" target="_blank" rel="noopener noreferrer" class="mobile-link"
-            style="color: #38bdf8;">GITHUB PROFILE (Aryan772005) ↗</a></li>
+        <li><a href="#about" class="mobile-link">ABOUT DBU</a></li>
+        <li><a href="#faq" class="mobile-link">FAQ ARCHIVE</a></li>
+        <li><a href="#policies-anchor" class="mobile-link" style="color: #a78bfa;">POLICIES & LEGAL</a></li>
       </ul>
       <div class="mobile-drawer-footer">
-        <a href="#register" class="pill-cta-btn full-width open-modal-btn" data-modal="register-modal">REGISTER FOR FREE
-          -></a>
+        <a href="#register" class="pill-cta-btn full-width open-modal-btn" data-modal="register-modal">REGISTER SQUAD -></a>
       </div>
     </div>
   </header>
 
-  <!-- TECHFEST-STYLE PERSISTENT SIDE DOCKS -->
-  <!-- Left Navigation Dock -->
-  <aside class="tf-dock-left" id="tf-dock-left" aria-label="Quick Section Navigation">
-    <div class="tf-dock-pill">
-      <a href="#hero" class="tf-dock-item active" data-section="hero" title="Nether Portal (Top)">
-        <span class="tf-dock-icon">⚡</span>
-        <span class="tf-dock-label">PORTAL</span>
-      </a>
-      <a href="#about" class="tf-dock-item" data-section="about" title="Crafting Bench">
-        <span class="tf-dock-icon">🛠️</span>
-        <span class="tf-dock-label">ABOUT</span>
-      </a>
-      <a href="#tracks" class="tf-dock-item" data-section="tracks" title="Biomes & Tracks">
-        <span class="tf-dock-icon">🗺️</span>
-        <span class="tf-dock-label">TRACKS</span>
-      </a>
-      <a href="#timeline" class="tf-dock-item" data-section="timeline" title="Smelting Timeline">
-        <span class="tf-dock-icon">⏳</span>
-        <span class="tf-dock-label">SCHEDULE</span>
-      </a>
-      <a href="#prizes" class="tf-dock-item" data-section="prizes" title="Loot Cache">
-        <span class="tf-dock-icon">💎</span>
-        <span class="tf-dock-label">PRIZES</span>
-      </a>
-      <a href="#rules" class="tf-dock-item" data-section="rules" title="Builder Codex">
-        <span class="tf-dock-icon">📜</span>
-        <span class="tf-dock-label">RULES</span>
-      </a>
-      <a href="#sponsors" class="tf-dock-item" data-section="sponsors" title="Allied Beacons">
-        <span class="tf-dock-icon">🛡️</span>
-        <span class="tf-dock-label">SPONSORS</span>
-      </a>
-      <a href="#faq" class="tf-dock-item" data-section="faq" title="Villager FAQ">
-        <span class="tf-dock-icon">❓</span>
-        <span class="tf-dock-label">FAQ</span>
-      </a>
-      <a href="gaming.html" class="tf-dock-item" data-section="gaming" title="Gaming Arena Sub-experience" style="border-top: 1px solid rgba(255,0,84,0.3);">
-        <span class="tf-dock-icon">🎮</span>
-        <span class="tf-dock-label" style="color: #ff0054; font-weight: bold;">GAMING</span>
-      </a>
-    </div>
-  </aside>
 
-  <!-- Right Social & Action Dock -->
-  <aside class="tf-dock-right" id="tf-dock-right" aria-label="Social Community Docks">
-    <div class="tf-dock-pill">
-      <a href="https://discord.com" target="_blank" rel="noopener noreferrer" class="tf-dock-social"
-        title="Join Discord Community">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-          <path
-            d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.894.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
-        </svg>
-      </a>
-      <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="tf-dock-social"
-        title="GitHub Organization">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-          <path
-            d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-        </svg>
-      </a>
-      <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="tf-dock-social"
-        title="Instagram Updates">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-          <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-          <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-        </svg>
-      </a>
-      <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="tf-dock-social"
-        title="LinkedIn Network">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
-          <rect x="2" y="9" width="4" height="12"></rect>
-          <circle cx="4" cy="4" r="2"></circle>
-        </svg>
-      </a>
-      <a href="https://wa.me" target="_blank" rel="noopener noreferrer" class="tf-dock-social"
-        title="WhatsApp Builder Support">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path
-            d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z">
-          </path>
-        </svg>
-      </a>
-    </div>
-  </aside>
 
   <main id="main-content">
+    <!-- ================= 0. DUAL ARENAS LANDING SECTION (HOME / FIRST VIEW) ================= -->
+    <!-- NOTE: #arenas is intentionally placed FIRST so it is the landing page -->
+    <section id="arenas" class="arenas-section section-padding reveal-3d-section has-section-backdrop" style="padding-top: calc(var(--header-h, 80px) + 40px);">
+      <div class="container">
+        <div class="section-badge" style="border-color: rgba(199, 125, 255, 0.4); background: rgba(157, 78, 221, 0.15);">
+          <span class="badge-dot dot-purple"></span>
+          <span style="color: #d8b4fe;">DUAL ARENA PORTAL · CHOOSE YOUR CHALLENGE</span>
+        </div>
+        <h2 class="section-title text-center" style="margin-bottom: 12px;">Two Epic Arenas. One Grand Stage.</h2>
+        <p class="section-subtext text-center" style="max-width: 780px; margin: 0 auto 36px auto; color: #d1d5db;">
+          Hosted by <strong>Desh Bhagat University</strong>, CRAFTCON '26 bridges collegiate breakthrough builders and elite competitive esports athletes under one roof. Choose your arena below to register:
+        </p>
+
+        <div class="arenas-grid">
+          <!-- Arena 1: 24H Flagship Hackathon -->
+          <div class="arena-card arena-card-hackathon tilt-3d-card">
+            <div>
+              <div class="arena-badge-strip">
+                <span class="arena-pill pill-purple">⚡ ARENA 01 · 24-HOUR HACKATHON</span>
+                <span class="arena-fee-tag fee-paid">₹300/PERSON</span>
+              </div>
+              <h3 class="arena-title">CRAFTCON '26 HACKATHON</h3>
+              <p class="arena-desc">
+                An intensive 24-hour non-stop collegiate hackathon where 500+ builders assemble to engineer real-world software, AI systems, and hardware prototypes across 6 cutting-edge themes.
+              </p>
+
+              <span class="subevents-label">6 THEMATIC SUB-EVENTS &amp; TRACKS:</span>
+              <div class="subevents-grid">
+                <div class="subevent-chip open-modal-btn" data-modal="register-modal" style="cursor:pointer;" title="Click to register for this track">
+                  <strong>Track 01: The End</strong>
+                  <span>AI &amp; Agentic Workflows</span>
+                </div>
+                <div class="subevent-chip open-modal-btn" data-modal="register-modal" style="cursor:pointer;" title="Click to register for this track">
+                  <strong>Track 02: Overworld</strong>
+                  <span>ClimateTech &amp; AgriTech</span>
+                </div>
+                <div class="subevent-chip open-modal-btn" data-modal="register-modal" style="cursor:pointer;" title="Click to register for this track">
+                  <strong>Track 03: Redstone Lab</strong>
+                  <span>IoT, Robotics &amp; Hardware</span>
+                </div>
+                <div class="subevent-chip open-modal-btn" data-modal="register-modal" style="cursor:pointer;" title="Click to register for this track">
+                  <strong>Track 04: Deep Dark</strong>
+                  <span>Cybersecurity &amp; Web3</span>
+                </div>
+                <div class="subevent-chip open-modal-btn" data-modal="register-modal" style="cursor:pointer;" title="Click to register for this track">
+                  <strong>Track 05: The Nether</strong>
+                  <span>FinTech &amp; High Scale</span>
+                </div>
+                <div class="subevent-chip open-modal-btn" data-modal="register-modal" style="cursor:pointer;" title="Click to register for this track">
+                  <strong>Track 06: Sandbox</strong>
+                  <span>Civic &amp; Open Innovation</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="arena-meta-row">
+                <div class="arena-meta-stat">
+                  <span class="label">BOUNTY POOL</span>
+                  <span class="val" style="color: #f5a623;">₹65,000+ Cache</span>
+                </div>
+                <div class="arena-meta-stat">
+                  <span class="label">SQUAD SIZE</span>
+                  <span class="val">2–4 Builders</span>
+                </div>
+                <div class="arena-meta-stat">
+                  <span class="label">HOSPITALITY</span>
+                  <span class="val" style="color: #2ed573;">Free Food &amp; Stay</span>
+                </div>
+              </div>
+
+              <div class="arena-actions-row">
+                <a href="#register" class="pill-cta-btn arena-primary-btn open-modal-btn" data-modal="register-modal">
+                  <span>REGISTER SQUAD</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+                <a href="#tracks" class="ghost-cta-btn arena-ghost-btn">
+                  <span>EXPLORE TRACKS</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Arena 2: National Esports & Gaming Arena -->
+          <div class="arena-card arena-card-gaming tilt-3d-card">
+            <div>
+              <div class="arena-badge-strip">
+                <span class="arena-pill pill-pink">🎮 ARENA 02 · NATIONAL ESPORTS</span>
+                <span class="arena-fee-tag fee-paid">SLOTS FROM ₹50/PLAYER</span>
+              </div>
+              <h3 class="arena-title">CRAFTCON GAMING ARENA</h3>
+              <p class="arena-desc">
+                High-stakes university gaming tournaments spanning mobile battle royales, 5v5 MOBA, speed chess, ludo, and carrom with verified cash prize pools and live stage broadcasts.
+              </p>
+
+              <span class="subevents-label">6 TOURNAMENT SUB-EVENTS:</span>
+              <div class="subevents-grid">
+                <div class="subevent-chip open-gaming-reg-btn" data-preset-game="BGMI" style="cursor:pointer;" title="Click to register for BGMI Squad Royale">
+                  <strong>BGMI Squad Royale</strong>
+                  <span>₹200/squad · Prize: ₹15,000</span>
+                </div>
+                <div class="subevent-chip open-gaming-reg-btn" data-preset-game="FREE_FIRE" style="cursor:pointer;" title="Click to register for Free Fire MAX">
+                  <strong>Free Fire MAX</strong>
+                  <span>₹200/squad · Prize: ₹10,000</span>
+                </div>
+                <div class="subevent-chip open-gaming-reg-btn" data-preset-game="MOBILE_LEGENDS" style="cursor:pointer;" title="Click to register for Mobile Legends">
+                  <strong>Mobile Legends (MLBB)</strong>
+                  <span>₹250/squad (5v5) · Prize: ₹8,000</span>
+                </div>
+                <div class="subevent-chip open-gaming-reg-btn" data-preset-game="LUDO" style="cursor:pointer;" title="Click to register for Ludo King">
+                  <strong>Ludo King Championship</strong>
+                  <span>₹50/player · Prize: ₹3,000</span>
+                </div>
+                <div class="subevent-chip open-gaming-reg-btn" data-preset-game="CHESS" style="cursor:pointer;" title="Click to register for Speed Chess">
+                  <strong>Speed Chess Masters</strong>
+                  <span>₹50/player · Prize: ₹4,000</span>
+                </div>
+                <div class="subevent-chip open-gaming-reg-btn" data-preset-game="CARROM" style="cursor:pointer;" title="Click to register for Carrom Strike">
+                  <strong>Carrom Strike Tourney</strong>
+                  <span>₹50/player · Prize: ₹3,000</span>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <div class="arena-meta-row">
+                <div class="arena-meta-stat">
+                  <span class="label">GAMING POOL</span>
+                  <span class="val" style="color: #ff0054;">₹43,000+ Cash</span>
+                </div>
+                <div class="arena-meta-stat">
+                  <span class="label">GATEWAY</span>
+                  <span class="val" style="color: #38bdf8;">UPI &amp; Razorpay</span>
+                </div>
+                <div class="arena-meta-stat">
+                  <span class="label">VENUE</span>
+                  <span class="val">DBU Sports Complex</span>
+                </div>
+              </div>
+
+              <div class="arena-actions-row">
+                <a href="gaming.html" class="pill-cta-btn arena-primary-btn" style="background: linear-gradient(135deg, #ff0054 0%, #d90429 100%); border-color: #ff4d6d;">
+                  <span>ENTER GAMING ARENA</span>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                </a>
+                <a href="gaming.html#rules" class="ghost-cta-btn arena-ghost-btn" style="border-color: rgba(255, 0, 84, 0.4); color: #ff758f;">
+                  <span>VIEW RULES &amp; FEES</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Razorpay Merchant Trust & Verification Banner -->
+        <div class="rzp-compliance-strip">
+          <div class="rzp-seal">
+            <div class="rzp-shield-icon">🛡️</div>
+            <div class="rzp-texts">
+              <strong>OFFICIAL DESH BHAGAT UNIVERSITY EVENT PLATFORM</strong>
+              <span>Verified Merchant · End-to-End Encrypted UPI &amp; Razorpay Payment Gateway · NAAC Grade A+ Accredited</span>
+            </div>
+          </div>
+          <div class="rzp-links">
+            <a class="rzp-legal-link" data-policy="terms">Terms &amp; Conditions</a>
+            <span style="color: rgba(255,255,255,0.2);">·</span>
+            <a class="rzp-legal-link" data-policy="privacy">Privacy Policy</a>
+            <span style="color: rgba(255,255,255,0.2);">·</span>
+            <a class="rzp-legal-link" data-policy="refund">Refund &amp; Cancellation</a>
+            <span style="color: rgba(255,255,255,0.2);">·</span>
+            <a class="rzp-legal-link" data-policy="delivery">Shipping &amp; Delivery</a>
+            <span style="color: rgba(255,255,255,0.2);">·</span>
+            <a class="rzp-legal-link" data-policy="contact">Contact Us</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ================= 1. HERO SECTION: TECHFEST-INSPIRED 3D PINNED STAGE ================= -->
     <section id="hero-pinned-wrapper" class="hero-pinned-wrapper 3d-scroll-target">
       <div id="hero" class="hero-sticky-stage">
@@ -517,6 +598,8 @@
         </div>
       </div>
     </section>
+
+
 
     <!-- ================= 2. ABOUT SECTION (CRAFTING TABLE 3x3 UI & VOXEL STATS) ================= -->
     <section id="about" class="about-section section-padding reveal-3d-section has-section-backdrop">
@@ -1414,9 +1497,8 @@
                 <li>
                   <div class="codex-bullet">03</div>
                   <div class="codex-text">
-                    <strong>Zero Registration Fee</strong>
-                    <p>Participation in CRAFTCON '26 is 100% free of charge, sponsored by Desh Bhagat University and
-                      partner technology organizations.</p>
+                    <strong>Transparent Entry Fee</strong>
+                    <p>Registration fee is ₹300 per builder (1=₹300, 2=₹600, 3=₹900, 4=₹1,200). All registered squads receive 24-hour campus workspace, mentoring, high-speed Wi-Fi, and free meals &amp; accommodation hosted by Desh Bhagat University.</p>
                   </div>
                 </li>
               </ul>
@@ -1612,7 +1694,7 @@
             <h4>Interested in partnering or sponsoring a track bounty?</h4>
             <p>Connect with 500+ elite engineers, recruit top talent, and showcase your developer APIs.</p>
           </div>
-          <a href="mailto:aryansinghtariani@gmail.com" class="pill-cta-btn banner-btn">
+          <a href="https://wa.me/917319847086?text=Hi%2C%20I%20am%20interested%20in%20sponsoring%20CRAFTCON%202026%20at%20Desh%20Bhagat%20University." target="_blank" rel="noopener noreferrer" class="pill-cta-btn banner-btn" id="become-sponsor-btn" onclick="window.open('https://wa.me/917319847086?text=Hi%2C%20I%20am%20interested%20in%20sponsoring%20CRAFTCON%202026%20at%20Desh%20Bhagat%20University.', '_blank'); return false;">
             <span>BECOME A SPONSOR</span>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path d="M5 12h14M12 5l7 7-7 7" />
@@ -1847,9 +1929,7 @@
             </summary>
             <div class="faq-answer">
               <p>
-                <strong>Zero fee.</strong> Participation is 100% free! Accepted builders will be provided with full
-                24-hour meals, midnight snacks, unlimited energy drinks, high-speed Wi-Fi, and designated sleeping/rest
-                quarters on campus.
+                <strong>Affordable Entry Fee:</strong> Hackathon registration is ₹300 per builder (1 Builder = ₹300, 2 Builders = ₹600, 3 Builders = ₹900, 4 Builders = ₹1,200). All accepted builders are provided with free 24-hour campus workspace, round-the-clock meals, midnight snacks, unlimited beverages, high-speed Wi-Fi, and designated sleeping/rest quarters on the Desh Bhagat University campus.
               </p>
             </div>
           </details>
@@ -1939,7 +2019,7 @@
                   <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
               </a>
-              <span class="final-subinfo">Zero entry fees · Free lodging & meals</span>
+              <span class="final-subinfo">₹300/person · Free lodging &amp; meals provided</span>
             </div>
           </div>
         </div>
@@ -2103,17 +2183,16 @@
     <div class="modal-dialog">
       <button class="modal-close-btn" aria-label="Close Registration Modal">&times;</button>
 
-      <!-- Step 1: Form -->
+      <!-- Step 1: Team Details Form -->
       <div id="modal-step-form" class="modal-view active">
         <div class="modal-header">
           <div class="modal-badge">
             <span class="modal-dot"></span>
-            <span>INVENTORY REGISTRATION</span>
+            <span>STEP 1 OF 2 &mdash; TEAM DETAILS</span>
           </div>
           <h3 class="modal-title">Claim Your Squad Pass</h3>
           <p class="modal-desc">
-            Complete the details below to register your team for CRAFTCON '26. Instant digital pass issued upon
-            submission.
+            Register your team for CRAFTCON '26 Hackathon. Entry fee: <strong>&#8377;300 / builder</strong>.
           </p>
         </div>
 
@@ -2126,10 +2205,10 @@
             <div class="form-group">
               <label for="team-size">Team Size <span class="req">*</span></label>
               <select id="team-size" required>
-                <option value="1">1 Builder (Solo)</option>
-                <option value="2">2 Builders</option>
-                <option value="3">3 Builders</option>
-                <option value="4" selected>4 Builders (Full Squad)</option>
+                <option value="1">1 Builder &mdash; &#8377;300</option>
+                <option value="2">2 Builders &mdash; &#8377;600</option>
+                <option value="3">3 Builders &mdash; &#8377;900</option>
+                <option value="4" selected>4 Builders &mdash; &#8377;1,200 (Full Squad)</option>
               </select>
             </div>
           </div>
@@ -2160,12 +2239,12 @@
             <div class="form-group">
               <label for="primary-track">Primary Biome / Track <span class="req">*</span></label>
               <select id="primary-track" required>
-                <option value="The End: AI & Agentic Workflows">Track 01 — The End (AI & Agents)</option>
-                <option value="The Overworld: Sustainability & AgriTech">Track 02 — The Overworld (ClimateTech)</option>
-                <option value="Redstone Lab: IoT & Hardware">Track 03 — Redstone Lab (IoT & Hardware)</option>
-                <option value="The Deep Dark: Cybersecurity & Web3">Track 04 — The Deep Dark (Security & Web3)</option>
-                <option value="The Nether: FinTech & High-Scale">Track 05 — The Nether (FinTech & Scale)</option>
-                <option value="Open Sandbox: Wildcard & Civic">Track 06 — Open Sandbox (Wildcard)</option>
+                <option value="The End: AI &amp; Agentic Workflows">Track 01 &mdash; The End (AI &amp; Agents)</option>
+                <option value="The Overworld: Sustainability &amp; AgriTech">Track 02 &mdash; The Overworld (ClimateTech)</option>
+                <option value="Redstone Lab: IoT &amp; Hardware">Track 03 &mdash; Redstone Lab (IoT &amp; Hardware)</option>
+                <option value="The Deep Dark: Cybersecurity &amp; Web3">Track 04 &mdash; The Deep Dark (Security &amp; Web3)</option>
+                <option value="The Nether: FinTech &amp; High-Scale">Track 05 &mdash; The Nether (FinTech &amp; Scale)</option>
+                <option value="Open Sandbox: Wildcard &amp; Civic">Track 06 &mdash; Open Sandbox (Wildcard)</option>
               </select>
             </div>
             <div class="form-group">
@@ -2183,19 +2262,114 @@
             <label class="custom-check-container" for="agree-terms">
               <input type="checkbox" id="agree-terms" required checked>
               <span class="custom-checkmark"></span>
-              <span class="check-label-text">We agree to abide by the CRAFTCON '26 Code of Conduct & Academic Integrity
-                rules.</span>
+              <span class="check-label-text">We agree to abide by the CRAFTCON '26 Code of Conduct &amp; Academic Integrity rules.</span>
             </label>
           </div>
 
           <div id="reg-error-box" style="display: none; background: rgba(239, 68, 68, 0.18); border: 1px solid rgba(239, 68, 68, 0.45); color: #fca5a5; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin: 12px 0; text-align: left;"></div>
 
           <button type="submit" class="pill-cta-btn modal-submit-btn" id="submit-ticket-btn">
-            <span>GENERATE HACKER TICKET</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M5 12h14M12 5l7 7-7 7" />
-            </svg>
+            <span>PROCEED TO PAYMENT &#8594;</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </button>
+        </form>
+      </div>
+
+      <!-- Step 1b: UPI Payment -->
+      <div id="modal-step-payment" class="modal-view">
+        <div class="modal-header">
+          <div class="modal-badge">
+            <span class="modal-dot"></span>
+            <span>STEP 2 OF 2 &mdash; PAYMENT</span>
+          </div>
+          <h3 class="modal-title">Complete Payment</h3>
+          <p class="modal-desc">Scan the QR code and pay via UPI. Then enter your Transaction ID to confirm your registration.</p>
+        </div>
+
+        <!-- Fee Summary Box -->
+        <div class="hack-pay-summary">
+          <div class="pay-sum-row">
+            <span class="pay-sum-label">Team</span>
+            <span class="pay-sum-val" id="pay-team-name-display">&mdash;</span>
+          </div>
+          <div class="pay-sum-row">
+            <span class="pay-sum-label">Builders &times; &#8377;300</span>
+            <span class="pay-sum-val" id="pay-size-display">4 builders</span>
+          </div>
+          <div class="pay-sum-row pay-sum-total">
+            <span class="pay-sum-label">&#128176; Total Fee</span>
+            <span class="pay-sum-val" id="pay-amount-display">&#8377;1,200</span>
+          </div>
+        </div>
+
+        <!-- Razorpay Automated Payment Option -->
+        <div class="razorpay-direct-pay-box" style="margin: 20px 0 24px; text-align: center; background: rgba(59, 130, 246, 0.08); border: 1.5px solid rgba(59, 130, 246, 0.35); border-radius: 12px; padding: 20px;">
+          <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 6px;">
+            <span style="font-size: 1.25rem;">⚡</span>
+            <span style="color: #60a5fa; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.5px; text-transform: uppercase;">Instant Automated Verification</span>
+          </div>
+          <p style="color: rgba(255, 255, 255, 0.75); font-size: 0.85rem; margin-bottom: 16px; line-height: 1.4;">
+            Pay securely with <strong>UPI (GPay / PhonePe / Paytm)</strong>, Debit/Credit Cards, NetBanking, or Wallets. Instant verification &amp; digital pass generation!
+          </p>
+          <button type="button" class="pill-cta-btn" id="hack-btn-pay-razorpay" style="width: 100%; max-width: 380px; margin: 0 auto; background: linear-gradient(135deg, #2563eb, #1d4ed8); font-size: 1rem; font-weight: 700; padding: 14px 24px; border: 1px solid #60a5fa; box-shadow: 0 0 25px rgba(37, 99, 235, 0.45); display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
+            <span id="hack-rzp-btn-label">💳 PAY NOW WITH RAZORPAY</span>
+          </button>
+          <div id="hack-rzp-loading" style="display: none; color: #93c5fd; font-size: 0.85rem; margin-top: 10px; font-weight: 600;">
+            ⏳ Launching secure Razorpay checkout...
+          </div>
+          <div id="hack-rzp-error-box" style="display: none; background: rgba(239, 68, 68, 0.18); border: 1px solid rgba(239, 68, 68, 0.45); color: #fca5a5; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin-top: 12px;"></div>
+        </div>
+
+        <!-- Manual UPI QR Transfer Divider -->
+        <div style="display: flex; align-items: center; margin: 20px 0; gap: 12px;">
+          <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.15);"></div>
+          <span style="color: rgba(255,255,255,0.45); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600;">OR MANUAL UPI QR TRANSFER</span>
+          <div style="flex: 1; height: 1px; background: rgba(255,255,255,0.15);"></div>
+        </div>
+
+        <!-- UPI QR Code -->
+        <div class="upi-qr-block">
+          <div class="upi-qr-wrap">
+            <img id="hack-qr-img" src="/assets/images/upi_qr.png" alt="Scan to Pay via UPI" class="upi-qr-image" loading="lazy">
+          </div>
+          <div class="upi-id-block">
+            <span class="upi-id-label">UPI ID</span>
+            <span class="upi-id-val" id="hack-upi-id-display">paytm.s2sp1kq@pty</span>
+            <button type="button" class="copy-upi-btn" id="hack-copy-upi-btn">COPY</button>
+          </div>
+          <p class="upi-instruction">Pay via PhonePe, GPay, Paytm, or BHIM. After successful payment, enter your UTR/Transaction ID below.</p>
+        </div>
+
+        <!-- Payment Proof Submission -->
+        <form id="hack-upi-proof-form" class="hacker-form" style="margin-top: 0;">
+          <div class="form-group">
+            <label for="hack-utr-input">UTR / Transaction ID <span class="req">*</span></label>
+            <input type="text" id="hack-utr-input" placeholder="12-digit UTR from your UPI app" maxlength="30" autocomplete="off">
+            <small style="color: rgba(255,255,255,0.45); font-size: 11px; margin-top: 4px; display: block;">Find in: UPI App &rarr; Transaction History &rarr; UTR Number</small>
+          </div>
+
+          <div class="form-group">
+            <label>Payment Screenshot <span class="req">*</span></label>
+            <label for="hack-screenshot-input" class="screenshot-upload-label" id="hack-screenshot-label">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <span id="hack-screenshot-label-text">Click to upload payment screenshot</span>
+            </label>
+            <input type="file" id="hack-screenshot-input" accept="image/*" style="display:none;">
+            <div id="hack-screenshot-preview" style="display:none; margin-top: 10px; text-align: center;">
+              <img id="hack-screenshot-img" src="" alt="Payment Screenshot Preview" style="max-width: 100%; max-height: 160px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+            </div>
+          </div>
+
+          <div id="hack-pay-error-box" style="display: none; background: rgba(239, 68, 68, 0.18); border: 1px solid rgba(239, 68, 68, 0.45); color: #fca5a5; padding: 10px 14px; border-radius: 6px; font-size: 13px; margin: 12px 0;"></div>
+
+          <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px;">
+            <button type="button" class="ghost-cta-btn" id="hack-pay-back-btn" style="flex: 0 0 auto; padding: 10px 20px;">
+              &larr; BACK
+            </button>
+            <button type="submit" class="pill-cta-btn modal-submit-btn" id="hack-submit-proof-btn" style="flex: 1;">
+              <span>&#9989; SUBMIT &amp; CONFIRM REGISTRATION</span>
+            </button>
+          </div>
         </form>
       </div>
 
@@ -2244,7 +2418,9 @@
 
             <div class="ticket-barcode-strip">
               <div class="barcode-graphic" aria-hidden="true">
-                ||| | |||| | ||| ||||| | || |||| | ||| || ||||
+                <div class="barcode-bars" id="barcode-bars">
+                  <!-- Generated by JS -->
+                </div>
               </div>
               <div class="ticket-code-id">PASS-ID: <span id="pass-unique-id">CFT-8942-DBU</span></div>
             </div>
@@ -2272,6 +2448,311 @@
     </div>
   </div>
 
+  <!-- Policy & Legal Modal for Razorpay Verification -->
+  <div id="policy-modal" class="modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-dialog policy-modal-dialog">
+      <button class="modal-close-btn" id="policy-close-btn" aria-label="Close Policy Modal">&times;</button>
+      <div id="policy-modal-header" style="margin-bottom: 20px;">
+        <span class="modal-badge" id="policy-modal-badge">
+          <span class="modal-dot"></span>
+          <span id="policy-badge-text">LEGAL & COMPLIANCE</span>
+        </span>
+        <h3 class="modal-title" id="policy-modal-title" style="font-size: 1.5rem; margin-top: 6px;">CRAFTCON '26 Policies</h3>
+      </div>
+      <div id="policy-modal-content" class="policy-body">
+        <!-- Injected via JavaScript -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= GAMING ARENA REGISTRATION WIZARD MODAL ================= -->
+  <div class="gaming-modal-overlay" id="gaming-registration-modal">
+    <div class="gaming-modal-container">
+      
+      <!-- Wizard Header -->
+      <div class="wizard-header">
+        <div class="wizard-title-wrap">
+          <span style="font-size:1.4rem;">⚔️</span>
+          <div>
+            <h3 class="wizard-title" id="wizard-step-title">REGISTER FOR GAMING ARENA</h3>
+            <span style="font-size:0.75rem; color:#f5a623;" id="wizard-step-counter">STEP 1 OF 6</span>
+          </div>
+        </div>
+        <button class="modal-close-btn" id="close-reg-modal-btn">&times;</button>
+      </div>
+
+      <!-- Progress Line -->
+      <div class="wizard-progress-bar-wrap">
+        <div class="wizard-progress-fill" id="wizard-progress-fill"></div>
+      </div>
+
+      <!-- Wizard Body / Steps -->
+      <div class="wizard-body">
+
+        <!-- STEP 1: CATEGORY SELECTION -->
+        <div class="wizard-step-pane active" id="step-pane-1">
+          <p class="step-subtitle">Select your tournament category to begin:</p>
+          <div class="category-select-grid">
+            <div class="category-option-card" data-cat="online">
+              <div class="cat-icon">⚔️</div>
+              <h4 class="cat-title">ONLINE GAMING</h4>
+              <p style="font-size:0.85rem; color:#9ca3af; margin-bottom:12px;">BGMI • Free Fire • Mobile Legends</p>
+              <span class="cat-badge">SQUAD REGISTRATION</span>
+            </div>
+
+            <div class="category-option-card" data-cat="offline">
+              <div class="cat-icon">🏆</div>
+              <h4 class="cat-title">OFFLINE GAMING</h4>
+              <p style="font-size:0.85rem; color:#9ca3af; margin-bottom:12px;">Ludo • Speed Chess • Carrom</p>
+              <span class="cat-badge" style="color:#f5a623; background:rgba(245,166,35,0.15);">SOLO REGISTRATION</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: GAME SELECTION -->
+        <div class="wizard-step-pane" id="step-pane-2">
+          <p class="step-subtitle">Select the game you wish to enter:</p>
+          <div class="game-select-grid" id="wizard-game-select-grid">
+            <!-- Tiles populated dynamically via JS -->
+          </div>
+        </div>
+
+        <!-- STEP 3: PARTICIPANT DETAILS -->
+        <div class="wizard-step-pane" id="step-pane-3">
+          <p class="step-subtitle" id="step-3-subtitle">Enter Team &amp; Player information:</p>
+
+          <form id="wizard-details-form">
+            <div class="form-group-wrap" id="team-name-group">
+              <label class="form-label-custom">TEAM NAME *</label>
+              <input type="text" id="reg-team-name" class="input-field-custom" placeholder="e.g. Phoenix Squad">
+            </div>
+
+            <div class="form-group-wrap">
+              <label class="form-label-custom">COLLEGE / INSTITUTION *</label>
+              <input type="text" id="reg-college" class="input-field-custom" placeholder="e.g. Desh Bhagat University" required>
+            </div>
+
+            <!-- Captain / Main Contact -->
+            <div style="padding: 16px; background: #08080e; border-radius:8px; margin-bottom:20px; border:1px solid rgba(255,255,255,0.1);">
+              <h5 style="color:#f5a623; font-family:'Space Grotesk', sans-serif; margin-bottom:12px;" id="captain-header-title">PLAYER 1 — CAPTAIN DETAILS</h5>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div>
+                  <label class="form-label-custom">FULL NAME *</label>
+                  <input type="text" id="captain-name" class="input-field-custom" required placeholder="Captain Name">
+                </div>
+                <div>
+                  <label class="form-label-custom">IN-GAME NAME / ID *</label>
+                  <input type="text" id="captain-ign" class="input-field-custom" required placeholder="e.g. Mortal_99">
+                </div>
+                <div>
+                  <label class="form-label-custom">EMAIL ADDRESS *</label>
+                  <input type="email" id="captain-email" class="input-field-custom" required placeholder="captain@email.com">
+                </div>
+                <div>
+                  <label class="form-label-custom">PHONE NUMBER *</label>
+                  <input type="tel" id="captain-phone" class="input-field-custom" required placeholder="+91 9876543210">
+                </div>
+              </div>
+            </div>
+
+            <!-- Additional Squad Players Container -->
+            <div id="additional-players-container">
+              <!-- Dynamic player forms injected here -->
+            </div>
+
+            <!-- Dynamic Price Calculation Box -->
+            <div class="price-summary-box">
+              <div>
+                <span class="price-breakdown-text" id="price-calc-breakdown">₹50 / person × 4 Players</span>
+                <div style="font-size:0.78rem; color:#9ca3af;">Mandatory University Registration Rate</div>
+              </div>
+              <div class="price-total-val" id="price-calc-total">₹200</div>
+            </div>
+          </form>
+        </div>
+
+        <!-- STEP 4: JOIN WHATSAPP GROUP -->
+        <div class="wizard-step-pane" id="step-pane-4">
+          <div style="text-align:center; margin-bottom:16px;">
+            <h4 style="font-family:'Space Grotesk', sans-serif; font-size:1.4rem; color:#ffffff; margin-bottom:6px;">JOIN THE WHATSAPP GROUP</h4>
+            <p style="color:#9ca3af; font-size:0.88rem;">Stay connected with the CRAFTCON 2K26 community.</p>
+          </div>
+
+          <div class="modal-step-card" style="padding: 20px; background: #08080e; border-radius:10px; border:1px solid rgba(255,255,255,0.1); margin-bottom:20px;">
+            <p style="color:#ffffff; font-weight:600; font-size:0.9rem; margin-bottom:10px;">
+              Join the official WhatsApp group to receive:
+            </p>
+            <ul style="color:#9ca3af; font-size:0.88rem; line-height:1.8; padding-left:18px; margin-bottom:20px;">
+              <li>• Event announcements &amp; tournament brackets</li>
+              <li>• Important updates &amp; schedule changes</li>
+              <li>• Competition information &amp; venue instructions</li>
+              <li>• Last-minute notifications &amp; organizer support</li>
+            </ul>
+
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <a href="https://chat.whatsapp.com/CkX2FAdIZP4BnTo61dVQaF" target="_blank" rel="noopener noreferrer" class="btn-gaming-secondary" id="btn-join-whatsapp" style="width:100%; justify-content:center; border-color:#25D366; color:#25D366; text-decoration:none; padding:12px 18px; font-weight:700;">
+                <span>💬 JOIN WHATSAPP GROUP</span>
+              </a>
+
+              <button type="button" class="btn-gaming-primary" id="btn-confirm-whatsapp" style="width:100%; justify-content:center; background:#2ed573; border-color:#2ed573; opacity:0.6; cursor:not-allowed;" disabled>
+                <span>✓ I HAVE JOINED THE GROUP</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 5: REVIEW REGISTRATION SUMMARY -->
+        <div class="wizard-step-pane" id="step-pane-5">
+          <p class="step-subtitle">Review your registration details before proceeding to payment:</p>
+
+          <div class="modal-step-card" style="padding: 20px; background: #08080e; border-radius:10px; border:1px solid rgba(255,255,255,0.1); margin-bottom:20px;">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+              <div>
+                <span style="font-size:0.75rem; color:#9ca3af; text-transform:uppercase;">EVENT</span>
+                <div style="color:#ffffff; font-weight:700;">CRAFTCON 2K26 Gaming Arena</div>
+              </div>
+              <div>
+                <span style="font-size:0.75rem; color:#9ca3af; text-transform:uppercase;">SELECTED GAME</span>
+                <div style="color:#f5a623; font-weight:700;" id="review-game-name">BGMI</div>
+              </div>
+              <div>
+                <span style="font-size:0.75rem; color:#9ca3af; text-transform:uppercase;">TEAM NAME</span>
+                <div style="color:#ffffff;" id="review-team-name">Phoenix Squad</div>
+              </div>
+              <div>
+                <span style="font-size:0.75rem; color:#9ca3af; text-transform:uppercase;">COLLEGE</span>
+                <div style="color:#ffffff;" id="review-college">Desh Bhagat University</div>
+              </div>
+              <div>
+                <span style="font-size:0.75rem; color:#9ca3af; text-transform:uppercase;">WHATSAPP GROUP</span>
+                <div style="color:#2ed573; font-weight:600;" id="review-whatsapp-status">✓ Joined / Confirmed</div>
+              </div>
+            </div>
+
+            <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top:12px;">
+              <span style="font-size:0.75rem; color:#9ca3af; text-transform:uppercase;">PARTICIPANTS</span>
+              <ul id="review-players-list" style="margin-top:8px; padding-left:20px; color:#d1d5db; font-size:0.9rem;">
+                <!-- List injected dynamically -->
+              </ul>
+            </div>
+          </div>
+
+          <div class="price-summary-box">
+            <div>
+              <span class="price-breakdown-text">FINAL TOTAL AMOUNT</span>
+              <div style="font-size:0.78rem; color:#9ca3af;">₹50 × <span id="review-player-count">4</span> Players</div>
+            </div>
+            <div class="price-total-val" id="review-total-amount">₹200</div>
+          </div>
+        </div>
+
+        <!-- STEP 6: PAYMENT PORTAL (RAZORPAY AUTO-VERIFIED) -->
+        <div class="wizard-step-pane" id="step-pane-6">
+          <div style="text-align:center; margin-bottom:16px;">
+            <h4 style="font-family:'Space Grotesk', sans-serif; font-size:1.4rem; color:#ffffff;" id="pay-portal-title">💳 SECURE PAYMENT</h4>
+            <p style="color:#9ca3af; font-size:0.88rem;" id="pay-portal-subtitle">Click the button below to pay securely via Razorpay (UPI, Card, NetBanking, Wallet).</p>
+          </div>
+
+          <!-- Visually Prominent Amount Summary Block -->
+          <div class="modal-step-card" style="padding: 16px; background: #08080e; border-radius:10px; text-align:center; border:1px solid rgba(255,255,255,0.1); margin-bottom:16px;">
+            <div style="font-size:0.78rem; color:#9ca3af; text-transform:uppercase; letter-spacing:1px;">FINAL AMOUNT PAYABLE</div>
+            <div style="font-family:'Space Grotesk', monospace; font-size:2.2rem; color:#2ed573; margin:4px 0; font-weight:800;" id="pay-amount-display">₹200</div>
+            <div style="font-size:0.8rem; color:#f5a623; font-weight:600;" id="pay-reg-id-display">REGISTRATION: CRAFT-26-XXXX</div>
+          </div>
+
+          <!-- Razorpay Pay Now Button -->
+          <div id="razorpay-payment-section" style="text-align:center;">
+            <div style="margin-bottom:14px; padding:12px 16px; background:rgba(46,213,115,0.08); border:1px solid rgba(46,213,115,0.3); border-radius:8px; font-size:0.82rem; color:#9ca3af;">
+              🔒 Payments are processed securely by <strong style="color:#fff;">Razorpay</strong> — India's most trusted payment gateway. Supports UPI, PhonePe, GPay, Paytm, Cards &amp; NetBanking.
+            </div>
+
+            <button type="button" id="btn-pay-razorpay" style="width:100%; padding:16px 24px; background:linear-gradient(135deg,#528ff8,#0052cc); color:#fff; border:none; border-radius:10px; font-family:'Space Grotesk',sans-serif; font-size:1.1rem; font-weight:800; cursor:pointer; letter-spacing:1px; box-shadow:0 6px 20px rgba(82,143,248,0.4); transition:transform 0.15s, box-shadow 0.15s;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 10px 30px rgba(82,143,248,0.5)'" onmouseout="this.style.transform=''; this.style.boxShadow='0 6px 20px rgba(82,143,248,0.4)'">
+              <span id="rzp-btn-label">💳 PAY NOW WITH RAZORPAY</span>
+            </button>
+
+            <div id="rzp-loading-msg" style="display:none; margin-top:14px; color:#9ca3af; font-size:0.88rem;">
+              ⏳ Initializing secure checkout, please wait...
+            </div>
+            <div id="rzp-error-msg" style="display:none; margin-top:14px; padding:10px 14px; background:rgba(255,71,87,0.1); border:1px solid rgba(255,71,87,0.35); border-radius:8px; color:#ff4757; font-size:0.85rem;">
+            </div>
+          </div>
+
+          <!-- Fallback UPI Manual Section (hidden by default, shown as backup) -->
+          <div id="upi-payment-section" style="display:none;">
+            <div style="text-align:center; margin-bottom:16px;">
+              <div style="display:inline-block; padding:10px; background:#ffffff; border-radius:12px; border:2px solid #f5a623; box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+                <img id="upi-qr-image" src="assets/images/upi_qr.png" alt="CRAFTCON 2K26 UPI Payment QR Code" style="width:180px; height:180px; object-fit:contain; display:block; border-radius:6px;">
+              </div>
+              <div style="margin-top:8px; font-size:0.85rem; color:#f5a623; font-weight:700;">
+                UPI ID: <span id="upi-id-display">paytm.s2sp1kq@pty</span>
+                <button type="button" id="btn-copy-upi" style="padding:2px 8px; font-size:0.72rem; background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.25); border-radius:4px; color:#fff; cursor:pointer; margin-left:6px;">COPY</button>
+              </div>
+            </div>
+            <form id="upi-proof-form" style="display:flex; flex-direction:column; gap:14px;">
+              <div class="form-group-wrap">
+                <label class="form-label-custom">UTR / TRANSACTION ID *</label>
+                <input type="text" id="reg-utr-input" class="input-field-custom" placeholder="Enter 12-digit UTR / Transaction ID" minlength="6" maxlength="35">
+              </div>
+              <div class="form-group-wrap">
+                <label class="form-label-custom">PAYMENT SCREENSHOT (JPG, PNG, MAX 10MB)</label>
+                <input type="file" id="reg-screenshot-input" accept="image/jpeg,image/png,image/webp" class="input-field-custom" style="padding:8px;">
+                <div id="screenshot-preview-wrap" style="display:none; margin-top:8px; text-align:center;">
+                  <img id="screenshot-preview-img" alt="Payment Screenshot Preview" style="max-height:120px; border-radius:6px; border:1px solid #f5a623;">
+                </div>
+              </div>
+              <button type="submit" class="btn-gaming-primary" id="btn-submit-upi-proof" style="width:100%; justify-content:center; background:#f5a623; border-color:#f5a623; color:#000000; font-weight:800;">
+                <span>📥 SUBMIT PAYMENT PROOF</span>
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- STEP 7: REGISTRATION SUBMITTED / SUCCESS -->
+        <div class="wizard-step-pane" id="step-pane-7">
+          <div style="text-align:center; margin-bottom:20px;">
+            <div style="font-size:3rem; margin-bottom:8px;" id="success-icon">🎉</div>
+            <h3 style="font-family:'Space Grotesk', sans-serif; font-size:1.6rem; color:#2ed573;" id="success-title">PAYMENT SUCCESSFUL!</h3>
+            <p style="color:#9ca3af; font-size:0.9rem;" id="success-subtext">Your registration is confirmed and payment is verified automatically via Razorpay.</p>
+          </div>
+
+          <div class="voucher-card" id="printable-voucher-card">
+            <div style="font-size:0.75rem; color:#9ca3af; text-transform:uppercase;">OFFICIAL ARENA REGISTRATION PASS</div>
+            <div class="voucher-reg-id" id="success-reg-id">CRAFT-26-BGMI-XXXX</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; text-align:left; margin-top:16px; font-size:0.9rem;">
+              <div><strong>Game:</strong> <span id="succ-game">BGMI</span></div>
+              <div><strong>Team:</strong> <span id="succ-team">Phoenix Squad</span></div>
+              <div><strong>College:</strong> <span id="succ-college">DBU</span></div>
+              <div><strong>Status:</strong> <span id="succ-status" style="color:#f5a623; font-weight:700;">PENDING VERIFICATION</span></div>
+            </div>
+          </div>
+
+          <div style="padding:14px; background:rgba(245,166,35,0.08); border:1px dashed #f5a623; border-radius:8px; font-size:0.85rem; color:#9ca3af; line-height:1.5; margin-bottom:20px;">
+            ℹ️ Our team is verifying your UTR against our bank statement. Once verified, your status will update to <strong>CONFIRMED</strong> and your official pass will be emailed to your captain email.
+          </div>
+
+          <div style="display:flex; gap:12px;">
+            <button class="btn-gaming-secondary" id="btn-print-receipt" style="flex:1;">
+              <span>📄 PRINT PASS</span>
+            </button>
+            <button class="btn-gaming-primary" id="btn-finish-reg" style="flex:1;">
+              <span>BACK TO SITE</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Wizard Footer Controls -->
+      <div class="wizard-footer" id="wizard-footer-controls">
+        <button class="btn-gaming-ghost" id="btn-wizard-prev">← BACK</button>
+        <button class="btn-gaming-primary" id="btn-wizard-next">NEXT STEP →</button>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="gaming-wizard.js" defer></script>
   <script src="main.js" defer></script>
 </body>
 

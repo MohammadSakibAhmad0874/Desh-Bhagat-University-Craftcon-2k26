@@ -18,7 +18,26 @@ document.addEventListener('DOMContentLoaded', () => {
   initHeroParallax();
   initCardTiltPhysics();
   initThreeJSScene();
+
+  // Auto-open registration wizard if ?game=GAME_ID is in the URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const presetGameParam = urlParams.get('game');
+  if (presetGameParam && GAMES_CATALOGUE[presetGameParam]) {
+    // Small delay to let the wizard fully initialise
+    setTimeout(() => {
+      const modal = document.getElementById('gaming-registration-modal');
+      if (!modal) return;
+      // Set wizard state
+      wizardState.gameId = presetGameParam;
+      wizardState.category = GAMES_CATALOGUE[presetGameParam].category;
+      wizardState.step = 3; // jump straight to details step
+      wizardState.registrationId = null;
+      renderWizardStep();
+      modal.classList.add('active');
+    }, 400);
+  }
 });
+
 
 /* ==========================================================================
    GAMES REGISTRY & CONFIGURATION

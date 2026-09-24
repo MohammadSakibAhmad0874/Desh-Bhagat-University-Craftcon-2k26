@@ -334,13 +334,13 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 46px;
+  height: 46px;
   background: #ffffff;
-  border-radius: 6px;
-  padding: 2px;
+  border-radius: 8px;
+  padding: 3px;
   border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 14px rgba(255, 255, 255, 0.35);
   flex-shrink: 0;
   transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
@@ -1543,25 +1543,13 @@ a {
   100% { transform: translateY(200%); opacity: 0; }
 }
 
-/* --- TECHFEST-STYLE PERSISTENT SIDE DOCKS --- */
-.tf-dock-left {
-  position: fixed;
-  left: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 90;
-  pointer-events: auto;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-
+/* --- TECHFEST-STYLE PERSISTENT SIDE DOCKS REMOVED PER USER REQUEST --- */
+.tf-dock-left,
 .tf-dock-right {
-  position: fixed;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 90;
-  pointer-events: auto;
-  transition: opacity 0.3s ease, transform 0.3s ease;
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
 }
 
 .tf-dock-pill {
@@ -2986,10 +2974,17 @@ a {
 .footer-tri-mark .dot { color: var(--color-purple-bright); }
 
 /* --- 17. REGISTRATION MODAL --- */
-.modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 0; visibility: hidden; transition: all var(--transition-smooth); }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; opacity: 0; visibility: hidden; transition: all var(--transition-smooth); }
 .modal-backdrop.open { opacity: 1; visibility: visible; }
-.modal-dialog { background: #141422; border: 1px solid var(--border-purple); border-radius: var(--radius-lg); max-width: 640px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; padding: 40px 36px; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 40px rgba(157, 78, 221, 0.25); transform: translateY(20px); transition: transform var(--transition-smooth); }
+.modal-dialog { background: #141422; border: 1px solid var(--border-purple); border-radius: var(--radius-lg); max-width: 640px; width: 100%; max-height: calc(100vh - 40px); overflow-y: auto; position: relative; padding: 36px 32px; box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85), 0 0 40px rgba(157, 78, 221, 0.25); transform: translateY(20px); transition: transform var(--transition-smooth); scrollbar-width: thin; scrollbar-color: rgba(157,78,221,0.4) transparent; }
+.modal-dialog::-webkit-scrollbar { width: 5px; }
+.modal-dialog::-webkit-scrollbar-thumb { background: rgba(157,78,221,0.4); border-radius: 10px; }
 .modal-backdrop.open .modal-dialog { transform: translateY(0); }
+/* Track card click-to-register hint */
+.track-register-hint { display: inline-block; font-size: 0.75rem; color: var(--color-purple-bright); font-family: var(--font-pixel); letter-spacing: 0.05em; opacity: 0.85; transition: opacity var(--transition-fast); }
+.track-card:hover .track-register-hint { opacity: 1; }
+/* Hide GitHub nav pill globally */
+.nav-github-pill { display: none !important; }
 .modal-close-btn { position: absolute; top: 20px; right: 24px; background: transparent; border: none; font-size: 2rem; line-height: 1; color: var(--text-dim); cursor: pointer; transition: color var(--transition-fast); }
 .modal-close-btn:hover { color: var(--text-white); }
 .modal-view { display: none; }
@@ -3032,7 +3027,9 @@ a {
 .t-val.sm { font-size: 0.88rem; font-weight: 600; }
 .ticket-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
 .ticket-barcode-strip { display: flex; align-items: center; justify-content: space-between; background: rgba(0, 0, 0, 0.4); padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); margin-bottom: 14px; }
-.barcode-graphic { font-family: monospace; letter-spacing: 2px; font-size: 0.85rem; color: var(--text-dim); }
+.barcode-graphic { display: flex; align-items: center; gap: 0; }
+.barcode-bars { display: flex; align-items: stretch; gap: 2px; height: 36px; }
+.barcode-bar { background: var(--text-white); border-radius: 1px; }
 .ticket-code-id { font-family: var(--font-pixel); font-size: 0.68rem; color: var(--color-amber-bright); }
 .ticket-stub { text-align: center; font-family: var(--font-pixel); font-size: 0.58rem; letter-spacing: 0.12em; color: var(--text-dim); border-top: 1px dashed var(--border-subtle); padding-top: 12px; }
 .ticket-actions { display: flex; align-items: center; gap: 12px; justify-content: center; }
@@ -4617,5 +4614,759 @@ body, input, select, textarea, button {
   height: 0 !important;
   width: 0 !important;
   overflow: hidden !important;
+}
+
+/* ==========================================================================
+   22. LAPTOP SCREEN & COMPACT VIEWPORT OPTIMIZATIONS (NEVER CUT OFF BUTTONS)
+   Target: 100% Zoom on Windows laptops (1366x768, 1440x900, 1536x864, 1920x1080 @ 125%)
+   ========================================================================== */
+@media screen and (max-height: 880px) and (min-width: 769px), screen and (min-width: 1025px) and (max-width: 1440px) {
+  :root {
+    --nav-height: 64px;
+  }
+
+  .header-container {
+    padding: 0 clamp(16px, 2vw, 36px);
+  }
+
+  .desktop-nav {
+    padding: 5px 14px;
+  }
+
+  .nav-links {
+    gap: clamp(12px, 1.3vw, 22px);
+  }
+
+  .nav-link {
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+  }
+
+  .cube-status-pill {
+    padding: 5px 12px;
+    font-size: 0.72rem;
+  }
+
+  /* Compact Hero Layout for Laptops so CTAs and Countdown are 100% visible */
+  .hero-content-wrapper {
+    padding: calc(var(--nav-height) + 6px) clamp(16px, 2vw, 32px) 12px clamp(16px, 2vw, 32px) !important;
+    justify-content: flex-start !important;
+    gap: clamp(8px, 1.4vh, 16px) !important;
+    height: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .hero-inner {
+    max-width: min(560px, 48vw) !important;
+    padding: clamp(14px, 1.8vh, 20px) clamp(16px, 2vw, 24px) !important;
+    border-radius: 14px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .hero-kicker-badge {
+    padding: 5px 12px !important;
+    margin-bottom: clamp(6px, 1vh, 10px) !important;
+    gap: 8px !important;
+  }
+
+  .kicker-title, .kicker-sub {
+    font-size: 0.62rem !important;
+  }
+
+  .hero-headline {
+    font-size: clamp(2.2rem, min(4.2vw, 5.5vh), 3.4rem) !important;
+    line-height: 0.94 !important;
+    margin-bottom: clamp(6px, 1vh, 12px) !important;
+  }
+
+  .hero-subtext {
+    font-size: clamp(0.82rem, 1vw, 0.92rem) !important;
+    line-height: 1.42 !important;
+    margin-bottom: clamp(8px, 1.2vh, 14px) !important;
+    max-width: 480px !important;
+  }
+
+  .hero-meta-bar {
+    padding: clamp(6px, 1vh, 8px) 14px !important;
+    margin-bottom: clamp(8px, 1.2vh, 14px) !important;
+    gap: 12px !important;
+  }
+
+  .meta-val {
+    font-size: 0.8rem !important;
+  }
+
+  .hero-cta-group {
+    margin-bottom: clamp(8px, 1.2vh, 14px) !important;
+    gap: 12px !important;
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+  }
+
+  .hero-primary-btn, .ghost-cta-btn {
+    padding: clamp(9px, 1.3vh, 12px) clamp(18px, 1.8vw, 24px) !important;
+    font-size: 0.84rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .hero-countdown-box {
+    padding: clamp(6px, 1vh, 10px) 14px !important;
+    max-width: 400px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .cd-number {
+    font-size: clamp(1.2rem, 2vh, 1.4rem) !important;
+  }
+
+  .hero-footer-bar {
+    padding-top: 4px !important;
+  }
+
+  .crest-kicker { font-size: 0.6rem !important; }
+  .crest-sub { font-size: 0.62rem !important; }
+}
+
+/* Extra Short Laptop Screens (Viewport Height <= 700px at 100% Zoom) */
+@media screen and (max-height: 720px) and (min-width: 769px) {
+  .hero-content-wrapper {
+    padding-top: calc(var(--nav-height) + 4px) !important;
+    padding-bottom: 6px !important;
+  }
+  .hero-inner {
+    padding: 10px 16px !important;
+  }
+  .hero-headline {
+    font-size: clamp(1.85rem, 4.5vh, 2.6rem) !important;
+    margin-bottom: 6px !important;
+  }
+  .hero-subtext {
+    font-size: 0.8rem !important;
+    line-height: 1.35 !important;
+    margin-bottom: 8px !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .hero-meta-bar {
+    margin-bottom: 8px !important;
+    padding: 4px 10px !important;
+  }
+  .hero-cta-group {
+    margin-bottom: 8px !important;
+  }
+  .hero-primary-btn, .ghost-cta-btn {
+    padding: 7px 16px !important;
+  }
+  .hero-countdown-box {
+    padding: 4px 10px !important;
+  }
+  .cd-number {
+    font-size: 1.15rem !important;
+  }
+  .hero-footer-bar {
+    display: none !important; /* Ensure zero cutoff for action buttons */
+  }
+}
+
+/* ==========================================================================
+   23. DUAL REALMS / DUAL EVENT PLATFORM SHOWCASE (HACKATHON & GAMING)
+   ========================================================================== */
+.arenas-section {
+  position: relative;
+  z-index: 5;
+  background: radial-gradient(circle at 50% 20%, rgba(35, 18, 55, 0.45) 0%, rgba(8, 8, 14, 0.98) 70%),
+              linear-gradient(180deg, rgba(8, 8, 14, 0.99) 0%, rgba(13, 13, 24, 0.95) 50%, rgba(8, 8, 14, 0.98) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: calc(var(--nav-height, 86px) + 32px) !important;
+  padding-bottom: 60px;
+  min-height: calc(100vh - var(--nav-height, 86px));
+  scroll-margin-top: var(--nav-height, 86px);
+}
+
+.arenas-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px;
+  margin-top: 36px;
+}
+
+.arena-card {
+  position: relative;
+  border-radius: 16px;
+  padding: 36px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+  overflow: hidden;
+}
+
+.arena-card:hover {
+  transform: translateY(-6px);
+}
+
+/* Arena 1: Hackathon Card */
+.arena-card-hackathon {
+  background: linear-gradient(145deg, rgba(20, 16, 36, 0.88) 0%, rgba(12, 10, 22, 0.95) 100%);
+  border: 1px solid rgba(199, 125, 255, 0.35);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(199, 125, 255, 0.25);
+}
+
+.arena-card-hackathon:hover {
+  border-color: rgba(199, 125, 255, 0.7);
+  box-shadow: 0 25px 60px rgba(123, 44, 191, 0.35), 0 0 40px rgba(199, 125, 255, 0.2);
+}
+
+/* Arena 2: Gaming Card */
+.arena-card-gaming {
+  background: linear-gradient(145deg, rgba(34, 12, 24, 0.88) 0%, rgba(16, 8, 14, 0.95) 100%);
+  border: 1px solid rgba(255, 0, 84, 0.35);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 0, 84, 0.25);
+}
+
+.arena-card-gaming:hover {
+  border-color: rgba(255, 0, 84, 0.7);
+  box-shadow: 0 25px 60px rgba(255, 0, 84, 0.35), 0 0 40px rgba(255, 0, 84, 0.2);
+}
+
+.arena-badge-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.arena-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-pixel);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+}
+
+.arena-pill.pill-purple {
+  background: rgba(157, 78, 221, 0.2);
+  border: 1px solid rgba(199, 125, 255, 0.4);
+  color: #d8b4fe;
+}
+
+.arena-pill.pill-pink {
+  background: rgba(255, 0, 84, 0.2);
+  border: 1px solid rgba(255, 0, 84, 0.4);
+  color: #ff758f;
+}
+
+.arena-fee-tag {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.arena-fee-tag.fee-free {
+  background: rgba(46, 213, 115, 0.15);
+  border: 1px solid rgba(46, 213, 115, 0.4);
+  color: #2ed573;
+}
+
+.arena-fee-tag.fee-paid {
+  background: rgba(255, 171, 0, 0.15);
+  border: 1px solid rgba(255, 171, 0, 0.4);
+  color: #ffc107;
+}
+
+.arena-title {
+  font-size: clamp(1.8rem, 2.8vw, 2.4rem);
+  font-weight: 800;
+  line-height: 1.1;
+  margin-bottom: 12px;
+  color: #ffffff;
+}
+
+.arena-desc {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #d1d5db;
+  margin-bottom: 24px;
+}
+
+/* Sub-Events List Inside Arena Cards */
+.subevents-label {
+  font-family: var(--font-pixel);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  display: block;
+  text-transform: uppercase;
+}
+
+.subevents-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.subevent-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.subevent-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.subevent-chip strong {
+  font-size: 0.85rem;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.subevent-chip span {
+  font-size: 0.72rem;
+  color: #9ca3af;
+}
+
+.arena-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.arena-meta-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.arena-meta-stat .label {
+  font-family: var(--font-pixel);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: #9ca3af;
+}
+
+.arena-meta-stat .val {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.arena-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.arena-actions-row .arena-primary-btn {
+  flex: 1;
+  min-width: 180px;
+  justify-content: center;
+  padding: 13px 22px;
+  font-size: 0.88rem;
+}
+
+.arena-actions-row .arena-ghost-btn {
+  padding: 12px 18px;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 900px) {
+  .arenas-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .subevents-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   24. RAZORPAY VERIFICATION & LEGAL COMPLIANCE FOOTER & MODALS
+   ========================================================================== */
+.rzp-compliance-strip {
+  margin-top: 48px;
+  padding: 22px 28px;
+  background: rgba(14, 14, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.rzp-seal {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.rzp-shield-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(56, 176, 0, 0.15);
+  border: 1px solid rgba(56, 176, 0, 0.4);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #38b000;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.rzp-texts strong {
+  font-size: 0.92rem;
+  color: #ffffff;
+  display: block;
+}
+
+.rzp-texts span {
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+.rzp-links {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.rzp-legal-link {
+  font-size: 0.82rem;
+  color: #a78bfa;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.rzp-legal-link:hover {
+  color: #c4b5fd;
+}
+
+/* Policy Content Inside Modals */
+.policy-modal-dialog {
+  max-width: 720px;
+  width: 92vw;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #121220;
+  border: 1px solid rgba(199, 125, 255, 0.4);
+  border-radius: 16px;
+  padding: 36px 32px;
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.9);
+}
+
+.policy-body {
+  color: #d1d5db;
+  font-size: 0.92rem;
+  line-height: 1.7;
+}
+
+.policy-body h3 {
+  color: #ffffff;
+  font-size: 1.15rem;
+  margin: 20px 0 8px 0;
+}
+
+.policy-body p {
+  margin-bottom: 14px;
+}
+
+.policy-body ul {
+  padding-left: 20px;
+  margin-bottom: 14px;
+}
+
+.policy-body li {
+  margin-bottom: 6px;
+}
+
+
+/* ============================================================
+   RESPONSIVE FIXES — LAPTOP 100% ZOOM & FULL RESPONSIVENESS
+   ============================================================ */
+
+/* Fix modal for laptop screens (1024px-1440px range) at 100% zoom */
+@media (min-width: 769px) and (max-width: 1440px) and (max-height: 900px) {
+  .modal-backdrop {
+    align-items: flex-start;
+    padding: 12px 20px;
+    overflow-y: auto;
+  }
+  .modal-dialog {
+    max-height: calc(100vh - 24px);
+    margin: 0 auto;
+    width: min(620px, 96vw);
+    padding: 28px 28px;
+  }
+  .form-row.two-col {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .hacker-form {
+    gap: 14px;
+  }
+  .modal-title {
+    font-size: 1.4rem;
+  }
+  .modal-desc {
+    margin-bottom: 18px;
+    font-size: 0.85rem;
+  }
+  .form-group label {
+    font-size: 0.78rem;
+  }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 8px 12px;
+    font-size: 0.85rem;
+  }
+}
+
+/* For screens shorter than 700px height (compact laptops at 100% zoom) */
+@media (max-height: 700px) {
+  .modal-backdrop {
+    align-items: flex-start;
+    padding: 8px 16px;
+    overflow-y: auto;
+  }
+  .modal-dialog {
+    max-height: calc(100vh - 16px);
+    padding: 22px 22px;
+  }
+  .modal-title { font-size: 1.25rem; }
+  .modal-desc { margin-bottom: 14px; }
+  .hacker-form { gap: 12px; }
+  .form-group input, .form-group select, .form-group textarea { padding: 7px 10px; }
+  .modal-badge { margin-bottom: 4px; }
+}
+
+/* Track cards: hover lift and pointer cursor */
+.track-card {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.track-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.6), 0 0 20px rgba(157,78,221,0.25);
+}
+
+/* Ensure barcode strip is always flex and wraps properly */
+.ticket-barcode-strip {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.barcode-bars {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+
+/* ============================================================
+   HEADER: ensure consistent height across all screen sizes
+   ============================================================ */
+.header-container {
+  overflow: visible;
+  flex-wrap: nowrap;
+}
+@media (min-width: 1025px) {
+  .header-container {
+    height: var(--nav-height) !important;
+    align-items: center;
+  }
+  .site-header {
+    height: var(--nav-height) !important;
+  }
+}
+
+/* ============================================================
+   ENFORCE COMPLETE REMOVAL OF SIDE BUTTON (error/5.jpg)
+   ============================================================ */
+.tf-dock-left,
+.tf-dock-right,
+#tf-dock-left,
+#tf-dock-right,
+.tf-dock-pill,
+.tf-dock-item {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  position: absolute !important;
+  left: -9999px !important;
+}
+
+/* ============================================================
+   HACKATHON MODAL PAYMENT STEP STYLES
+   ============================================================ */
+.hack-pay-summary {
+  background: rgba(157, 78, 221, 0.12);
+  border: 1px solid rgba(199, 125, 255, 0.3);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+
+.pay-sum-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.pay-sum-row:last-child {
+  margin-bottom: 0;
+}
+
+.pay-sum-label {
+  color: #9e9eb4;
+}
+
+.pay-sum-val {
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.pay-sum-total {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.pay-sum-total .pay-sum-label {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.pay-sum-total .pay-sum-val {
+  color: #f5a623;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+
+.upi-qr-block {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.upi-qr-wrap {
+  display: inline-block;
+  padding: 10px;
+  background: #ffffff;
+  border-radius: 12px;
+  border: 2px solid #f5a623;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  margin-bottom: 12px;
+}
+
+.upi-qr-image {
+  width: 220px;
+  height: 220px;
+  object-fit: contain;
+  display: block;
+  border-radius: 6px;
+}
+
+.upi-id-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.upi-id-label {
+  color: #9e9eb4;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.upi-id-val {
+  color: #f5a623;
+  font-weight: 700;
+  font-family: monospace;
+  font-size: 1rem;
+}
+
+.copy-upi-btn {
+  background: rgba(245, 166, 35, 0.2);
+  border: 1px solid rgba(245, 166, 35, 0.5);
+  color: #f5a623;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.copy-upi-btn:hover {
+  background: #f5a623;
+  color: #000000;
+}
+
+.upi-instruction {
+  font-size: 0.82rem;
+  color: #9e9eb4;
+  line-height: 1.5;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.screenshot-upload-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  cursor: pointer;
+  color: #d1d5db;
+  font-size: 0.88rem;
+  transition: all 0.2s ease;
+}
+
+.screenshot-upload-label:hover {
+  border-color: #f5a623;
+  color: #ffffff;
+  background: rgba(245, 166, 35, 0.06);
 }
 

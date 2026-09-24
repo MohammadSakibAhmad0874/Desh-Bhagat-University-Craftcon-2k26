@@ -144,6 +144,17 @@
       font-size: 0.7rem;
     }
 
+    .badge-status-rejected {
+      display: inline-block;
+      padding: 4px 10px;
+      background: rgba(255, 0, 84, 0.15);
+      color: #ff4d6d;
+      border: 1px solid rgba(255, 0, 84, 0.4);
+      border-radius: 20px;
+      font-family: 'Silkscreen', monospace;
+      font-size: 0.7rem;
+    }
+
     .btn-action-sm {
       padding: 6px 12px;
       background: rgba(157, 78, 221, 0.2);
@@ -366,7 +377,7 @@
       let totalPlayers = 0;
 
       rows.forEach(r => {
-        if (r.payment_status === 'PAID') {
+        if (r.payment_status === 'PAID' || r.payment_status === 'VERIFIED') {
           paidCount++;
           totalRev += (r.total_amount || 0);
         }
@@ -416,7 +427,21 @@
       rows.forEach(r => {
         const tr = document.createElement('tr');
         const hasProof = Boolean(r.payment_screenshot_url || r.utr_transaction_id);
-        const isPaid = r.payment_status === 'PAID';
+        const isPaid = r.payment_status === 'PAID' || r.payment_status === 'VERIFIED';
+        const isRejected = r.payment_status === 'REJECTED';
+
+        let badgeClass = 'badge-status-pending';
+        let badgeText = r.payment_status || 'PENDING';
+        if (isPaid) {
+          badgeClass = 'badge-status-paid';
+          badgeText = 'PAID ✓';
+        } else if (isRejected) {
+          badgeClass = 'badge-status-rejected';
+          badgeText = 'REJECTED ✕';
+        } else if (r.payment_status === 'SUBMITTED' || r.payment_status === 'PENDING_VERIFICATION') {
+          badgeClass = 'badge-status-pending';
+          badgeText = 'UNDER REVIEW ⏳';
+        }
 
         tr.innerHTML = `
           <td style="font-family:'Silkscreen', monospace; font-size:0.82rem; color:var(--color-amber);">${r.registration_id}</td>
@@ -433,17 +458,17 @@
           <td style="font-family:'Silkscreen', monospace; color:var(--color-green-bright);">${r.player_count} Player(s)</td>
           <td style="font-family:'Silkscreen', monospace; font-weight:700; color:var(--color-green-bright);">₹${r.total_amount}</td>
           <td>
-            <span class="${isPaid ? 'badge-status-paid' : 'badge-status-pending'}">
-              ${r.payment_status}
+            <span class="${badgeClass}">
+              ${badgeText}
             </span>
           </td>
           <td>
             <div style="display:flex; gap:6px; flex-wrap:wrap;">
               <button class="btn-action-sm" onclick="viewSquadRoster('${r.registration_id}')">ROSTER</button>
-              ${!isPaid ? `
-                <button class="btn-action-sm" style="background:rgba(112,224,0,0.2); border-color:var(--mc-xp-green); color:var(--color-green-bright);" onclick="handleVerifyPayment('${r.registration_id}', 'VERIFY')">VERIFY</button>
-                <button class="btn-action-sm" style="background:rgba(255,0,84,0.2); border-color:var(--color-purple-bright); color:#ff4d6d;" onclick="handleVerifyPayment('${r.registration_id}', 'REJECT')">REJECT</button>
-              ` : ''}
+              ${!isPaid && !isRejected ? `
+                <button class="btn-action-sm btn-verify" style="background:rgba(112,224,0,0.2); border-color:var(--mc-xp-green); color:var(--color-green-bright);" onclick="handleVerifyPayment('${r.registration_id}', 'VERIFY', this)">VERIFY</button>
+                <button class="btn-action-sm btn-reject" style="background:rgba(255,0,84,0.2); border-color:var(--color-purple-bright); color:#ff4d6d;" onclick="handleVerifyPayment('${r.registration_id}', 'REJECT', this)">REJECT</button>
+              ` : (isPaid ? `<span style="font-size:0.75rem; color:var(--color-green-bright); font-weight:700; padding:4px 6px;">CONFIRMED</span>` : '')}
             </div>
           </td>
         `;
@@ -459,11 +484,15 @@
       const content = document.getElementById('proof-modal-content');
       title.textContent = `PROOF: ${reg.registration_id}`;
 
+      const isPaid = reg.payment_status === 'PAID' || reg.payment_status === 'VERIFIED';
+      const isRejected = reg.payment_status === 'REJECTED';
+
       content.innerHTML = `
         <div style="margin-bottom:14px; padding:12px; background:var(--bg-deep); border-radius:6px; font-size:0.9rem;">
           <div style="margin-bottom:6px;"><strong style="color:var(--color-amber);">Team / Captain:</strong> ${reg.team_name} (${reg.captain_name})</div>
           <div style="margin-bottom:6px;"><strong style="color:var(--color-amber);">UTR / Trans ID:</strong> <span style="font-family:monospace; font-weight:700; color:var(--color-green-bright);">${reg.utr_transaction_id || 'N/A'}</span></div>
           <div style="margin-bottom:6px;"><strong style="color:var(--color-amber);">Amount Payable:</strong> ₹${reg.total_amount}</div>
+          <div style="margin-bottom:6px;"><strong style="color:var(--color-amber);">Current Status:</strong> <span style="font-weight:700; color:${isPaid ? 'var(--color-green-bright)' : 'var(--color-amber-bright)'}">${reg.payment_status}</span></div>
           <div><strong style="color:var(--color-amber);">Submitted At:</strong> ${reg.submitted_at || reg.created_at}</div>
         </div>
 
@@ -475,20 +504,28 @@
         ` : '<div style="color:var(--text-muted); text-align:center; padding:20px;">No screenshot image uploaded.</div>'}
 
         <div style="display:flex; gap:12px; margin-top:16px;">
-          <button class="btn-action-sm" style="flex:1; padding:10px; font-weight:700; background:var(--color-green); border-color:var(--mc-xp-green); color:#fff;" onclick="handleVerifyPayment('${reg.registration_id}', 'VERIFY')">✓ VERIFY PAYMENT</button>
-          <button class="btn-action-sm" style="flex:1; padding:10px; font-weight:700; background:#ff0054; border-color:#ff4d6d; color:#fff;" onclick="handleVerifyPayment('${reg.registration_id}', 'REJECT')">✕ REJECT PAYMENT</button>
+          ${!isPaid ? `
+            <button class="btn-action-sm" style="flex:1; padding:10px; font-weight:700; background:var(--color-green); border-color:var(--mc-xp-green); color:#fff;" onclick="handleVerifyPayment('${reg.registration_id}', 'VERIFY', this)">✓ VERIFY PAYMENT</button>
+            <button class="btn-action-sm" style="flex:1; padding:10px; font-weight:700; background:#ff0054; border-color:#ff4d6d; color:#fff;" onclick="handleVerifyPayment('${reg.registration_id}', 'REJECT', this)">✕ REJECT PAYMENT</button>
+          ` : `
+            <div style="flex:1; text-align:center; padding:10px; background:rgba(112,224,0,0.15); border:1px solid var(--mc-xp-green); border-radius:6px; color:var(--color-green-bright); font-weight:700;">
+              ✓ PAYMENT ALREADY VERIFIED & CONFIRMED
+            </div>
+          `}
         </div>
       `;
 
       document.getElementById('proof-details-modal').classList.add('active');
     }
 
-    async function handleVerifyPayment(regId, action) {
-      const confirmMsg = action === 'VERIFY' 
-        ? `Confirm payment for ${regId}? This will update status to PAID, generate pass, send confirmation email, and sync to Google Sheets.`
-        : `Reject payment for ${regId}?`;
+    async function handleVerifyPayment(regId, action, btnElement) {
+      if (!regId) return;
 
-      if (!confirm(confirmMsg)) return;
+      if (btnElement) {
+        btnElement.disabled = true;
+        btnElement.dataset.origText = btnElement.innerHTML;
+        btnElement.innerHTML = '⏳ SAVING...';
+      }
 
       try {
         const res = await fetch('/api/admin/verify-payment', {
@@ -502,16 +539,55 @@
         });
         const data = await res.json();
         if (data.success) {
-          alert(`Registration ${regId} payment ${action === 'VERIFY' ? 'VERIFIED & CONFIRMED' : 'REJECTED'} successfully!`);
+          // Immediately update in-memory registration state
+          const target = allRegistrations.find(r => r.registration_id === regId);
+          if (target) {
+            target.payment_status = (action === 'VERIFY') ? 'PAID' : 'REJECTED';
+            target.registration_status = (action === 'VERIFY') ? 'CONFIRMED' : 'CANCELLED';
+          }
+          renderAdminStats(allRegistrations);
+          applyFilters();
+
           const proofModal = document.getElementById('proof-details-modal');
           if (proofModal) proofModal.classList.remove('active');
-          fetchAdminRegistrations();
+
+          showAdminToast(`Registration ${regId} ${action === 'VERIFY' ? 'VERIFIED & CONFIRMED' : 'REJECTED'} successfully!`, 'success');
         } else {
           alert(`Action failed: ${data.error || 'Server error'}`);
+          if (btnElement) {
+            btnElement.disabled = false;
+            btnElement.innerHTML = btnElement.dataset.origText || 'VERIFY';
+          }
         }
       } catch (err) {
+        console.error('Verify payment error:', err);
         alert('Network error while processing verification action.');
+        if (btnElement) {
+          btnElement.disabled = false;
+          btnElement.innerHTML = btnElement.dataset.origText || 'VERIFY';
+        }
       }
+    }
+
+    function showAdminToast(msg, type = 'success') {
+      let toast = document.getElementById('admin-toast-banner');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'admin-toast-banner';
+        toast.style.cssText = 'position:fixed; bottom:24px; right:24px; z-index:999999; padding:12px 20px; border-radius:8px; font-family:"Space Grotesk", sans-serif; font-weight:700; font-size:0.9rem; box-shadow:0 8px 30px rgba(0,0,0,0.8); transition:all 0.3s ease;';
+        document.body.appendChild(toast);
+      }
+      toast.style.background = type === 'success' ? '#2ed573' : '#ff0054';
+      toast.style.color = '#ffffff';
+      toast.textContent = msg;
+      toast.style.display = 'block';
+      toast.style.opacity = '1';
+      setTimeout(() => {
+        if (toast) {
+          toast.style.opacity = '0';
+          setTimeout(() => { if (toast) toast.style.display = 'none'; }, 300);
+        }
+      }, 3500);
     }
 
     async function viewSquadRoster(regId) {
