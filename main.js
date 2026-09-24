@@ -18,7 +18,7 @@
  * - Live Countdown, Audio Ambiance Synthesizer & Ticket Generator
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+function bootApp() {
   initCountdown();
   initLenisSmoothScroll();
   initThreeJSScene();
@@ -43,7 +43,13 @@ document.addEventListener('DOMContentLoaded', () => {
   initAudioAmbiance();
   initBrochureAction();
   initPolicyModals();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', bootApp);
+} else {
+  bootApp();
+}
 
 /* ==========================================================================
    GLOBAL WEB AUDIO SYNTHESIZER (NO EXTERNAL AUDIO FILES NEEDED)
@@ -175,8 +181,9 @@ function initCountdown() {
 
   if (!daysEl || !hoursEl || !minsEl || !secsEl) return;
 
+  let lastSec = '';
   function updateTimer() {
-    const now = new Date().getTime();
+    const now = Date.now();
     const distance = targetDate - now;
 
     if (distance <= 0) {
@@ -192,14 +199,70 @@ function initCountdown() {
     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((distance % 1000) / 1000);
 
+    const sStr = String(seconds).padStart(2, '0');
     daysEl.textContent = String(days).padStart(2, '0');
     hoursEl.textContent = String(hours).padStart(2, '0');
     minsEl.textContent = String(minutes).padStart(2, '0');
-    secsEl.textContent = String(seconds).padStart(2, '0');
+
+    if (sStr !== lastSec) {
+      secsEl.textContent = sStr;
+      secsEl.style.transform = 'scale(1.15)';
+      secsEl.style.color = '#38ef7d';
+      secsEl.style.transition = 'transform 0.15s ease-out, color 0.3s ease';
+      setTimeout(() => {
+        if (secsEl) {
+          secsEl.style.transform = 'scale(1)';
+          secsEl.style.color = '';
+        }
+      }, 180);
+      lastSec = sStr;
+    }
   }
 
   updateTimer();
   setInterval(updateTimer, 1000);
+
+  // Animate stat counters dynamically on load
+  initLiveStatCounters();
+}
+
+function initLiveStatCounters() {
+  const statElements = document.querySelectorAll('.stat-big-num');
+  if (!statElements || statElements.length === 0) return;
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const el = entry.target;
+        if (el.dataset.animated) return;
+        el.dataset.animated = 'true';
+        const originalText = el.textContent.trim();
+        const numMatch = originalText.match(/\d+/);
+        if (numMatch) {
+          const target = parseInt(numMatch[0], 10);
+          const prefix = originalText.startsWith('₹') ? '₹' : (originalText.startsWith('$') ? '$' : '');
+          const suffix = originalText.includes('+') ? '+' : (originalText.includes('K') ? 'K+' : '');
+          let start = 0;
+          const duration = 1200;
+          const startTime = performance.now();
+          function step(now) {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const easeOut = 1 - Math.pow(1 - progress, 3);
+            const current = Math.floor(easeOut * target);
+            el.textContent = `${prefix}${current}${suffix}`;
+            if (progress < 1) {
+              requestAnimationFrame(step);
+            } else {
+              el.textContent = originalText;
+            }
+          }
+          requestAnimationFrame(step);
+        }
+      }
+    });
+  }, { threshold: 0.2 });
+
+  statElements.forEach(el => observer.observe(el));
 }
 
 /* ==========================================================================

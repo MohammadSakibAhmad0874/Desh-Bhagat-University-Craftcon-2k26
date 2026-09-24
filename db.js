@@ -1,4 +1,11 @@
-const { createClient } = require('@libsql/client');
+let createClient = null;
+try {
+  // Pure JavaScript web client - zero native binary dependencies, runs on any platform/serverless
+  createClient = require('@libsql/client/web').createClient;
+} catch (e) {
+  console.warn('⚠️ [Turso/libSQL] Web client not available:', e.message);
+}
+
 require('dotenv').config();
 
 /**
@@ -9,22 +16,32 @@ require('dotenv').config();
 const tursoUrl = (process.env.TURSO_DATABASE_URL || '').trim();
 const tursoToken = (process.env.TURSO_AUTH_TOKEN || '').trim() || undefined;
 
-const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
-const defaultDbUrl = isServerless ? 'file:/tmp/craftcon_gaming.db' : 'file:craftcon_gaming.db';
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NETLIFY);
 
-if (!tursoUrl && (process.env.VERCEL || process.env.NODE_ENV === 'production')) {
-  console.warn('⚠️ [Turso] TURSO_DATABASE_URL environment variable is missing in production deployment. Using ephemeral local SQLite in /tmp.');
+if (!tursoUrl && (process.env.VERCEL || process.env.NETLIFY || process.env.NODE_ENV === 'production')) {
+  console.warn('⚠️ [Turso] TURSO_DATABASE_URL environment variable is missing in production deployment. Running in resilient cloud mode.');
 }
 
 let rawClient = null;
-try {
-  rawClient = createClient({
-    url: tursoUrl || defaultDbUrl,
-    ...(tursoToken ? { authToken: tursoToken } : {})
-  });
-  console.log(`⚡ Initialized Turso/libSQL client (${tursoUrl ? 'Turso Cloud: ' + tursoUrl : (isServerless ? 'Vercel Serverless /tmp' : 'Local File Mode')})`);
-} catch (e) {
-  console.warn('⚠️ [Turso Client Init Warning]:', e.message);
+if (createClient && tursoUrl) {
+  try {
+    rawClient = createClient({
+      url: tursoUrl,
+      ...(tursoToken ? { authToken: tursoToken } : {})
+    });
+    console.log(`⚡ Connected to Turso Cloud: ${tursoUrl}`);
+  } catch (e) {
+    console.warn('⚠️ [Turso Client Init Warning]:', e.message);
+  }
+} else if (!isServerless) {
+  // On local desktop development only, fallback to local SQLite if native module exists
+  try {
+    const nativeLib = require('@libsql/client');
+    rawClient = nativeLib.createClient({ url: 'file:craftcon_gaming.db' });
+    console.log('⚡ Initialized local SQLite (Desktop Mode)');
+  } catch (e) {
+    console.warn('⚡ Running in resilient in-memory mode.');
+  }
 }
 
 const db = {
