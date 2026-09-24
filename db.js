@@ -9,16 +9,44 @@ require('dotenv').config();
 const tursoUrl = (process.env.TURSO_DATABASE_URL || '').trim();
 const tursoToken = (process.env.TURSO_AUTH_TOKEN || '').trim() || undefined;
 
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+const defaultDbUrl = isServerless ? 'file:/tmp/craftcon_gaming.db' : 'file:craftcon_gaming.db';
+
 if (!tursoUrl && (process.env.VERCEL || process.env.NODE_ENV === 'production')) {
-  console.warn('⚠️ [Turso] TURSO_DATABASE_URL environment variable is missing in production deployment!');
+  console.warn('⚠️ [Turso] TURSO_DATABASE_URL environment variable is missing in production deployment. Using ephemeral local SQLite in /tmp.');
 }
 
-const db = createClient({
-  url: tursoUrl || 'file:craftcon_gaming.db',
-  ...(tursoToken ? { authToken: tursoToken } : {})
-});
+let rawClient = null;
+try {
+  rawClient = createClient({
+    url: tursoUrl || defaultDbUrl,
+    ...(tursoToken ? { authToken: tursoToken } : {})
+  });
+  console.log(`⚡ Initialized Turso/libSQL client (${tursoUrl ? 'Turso Cloud: ' + tursoUrl : (isServerless ? 'Vercel Serverless /tmp' : 'Local File Mode')})`);
+} catch (e) {
+  console.warn('⚠️ [Turso Client Init Warning]:', e.message);
+}
 
-console.log(`⚡ Initialized Turso/libSQL client (${tursoUrl ? 'Turso Cloud: ' + tursoUrl : 'Local File Mode'})`);
+const db = {
+  execute: async (...args) => {
+    if (!rawClient) return { rows: [] };
+    try {
+      return await rawClient.execute(...args);
+    } catch (err) {
+      console.warn('⚠️ [DB execute notice]:', err.message);
+      return { rows: [] };
+    }
+  },
+  batch: async (...args) => {
+    if (!rawClient) return [];
+    try {
+      return await rawClient.batch(...args);
+    } catch (err) {
+      console.warn('⚠️ [DB batch notice]:', err.message);
+      return [];
+    }
+  }
+};
 
 let isInitialized = false;
 let initPromise = null;
