@@ -19,6 +19,14 @@
  */
 
 function bootApp() {
+  if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
+    try {
+      gsap.registerPlugin(ScrollTrigger);
+    } catch (e) {
+      console.warn('GSAP plugin registration notice:', e);
+    }
+  }
+
   initCountdown();
   initLenisSmoothScroll();
   initThreeJSScene();
@@ -43,6 +51,12 @@ function bootApp() {
   initAudioAmbiance();
   initBrochureAction();
   initPolicyModals();
+
+  if (typeof ScrollTrigger !== 'undefined') {
+    setTimeout(() => {
+      ScrollTrigger.refresh();
+    }, 250);
+  }
 }
 
 // Use window 'load' event to guarantee Three.js / GSAP / Lenis CDN scripts are fully loaded.
@@ -54,8 +68,10 @@ function safeBootApp() {
   bootApp();
 }
 window.addEventListener('load', safeBootApp);
-// Fallback: if page already loaded (script injected late), run immediately
-if (document.readyState === 'complete') {
+// Run countdown immediately without waiting for heavy 3D assets to load
+document.addEventListener('DOMContentLoaded', initCountdown);
+if (document.readyState === 'complete' || document.readyState === 'interactive') {
+  initCountdown();
   safeBootApp();
 }
 
@@ -188,6 +204,8 @@ function initCountdown() {
   const secsEl = document.getElementById('cd-seconds');
 
   if (!daysEl || !hoursEl || !minsEl || !secsEl) return;
+  if (window._countdownInitialized) return;
+  window._countdownInitialized = true;
 
   let lastSec = '';
   function updateTimer() {
@@ -205,7 +223,7 @@ function initCountdown() {
     const days = Math.floor(distance / (1000 * 60 * 60 * 24));
     const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((distance % 1000) / 1000);
+    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
     const sStr = String(seconds).padStart(2, '0');
     daysEl.textContent = String(days).padStart(2, '0');
@@ -346,17 +364,22 @@ function initLenisSmoothScroll() {
   });
 
   if (typeof gsap !== 'undefined' && typeof ScrollTrigger !== 'undefined') {
-    ScrollTrigger.config({
-      autoRefreshEvents: "visibilitychange,DOMContentLoaded,load,resize"
-    });
+    try {
+      gsap.registerPlugin(ScrollTrigger);
+      ScrollTrigger.config({
+        autoRefreshEvents: "visibilitychange,DOMContentLoaded,load,resize"
+      });
+    } catch (e) {
+      console.warn('ScrollTrigger config warning:', e);
+    }
 
     gsap.ticker.add((time) => {
-      lenis.raf(time * 1000);
+      if (lenis) lenis.raf(time * 1000);
     });
     gsap.ticker.lagSmoothing(0);
   } else {
     function raf(time) {
-      lenis.raf(time);
+      if (lenis) lenis.raf(time);
       requestAnimationFrame(raf);
     }
     requestAnimationFrame(raf);
@@ -598,189 +621,104 @@ function initThreeJSScene() {
 }
 
 /* ==========================================================================
-   4. HERO 3D PORTAL CAMERA DIVE (TECHFEST-STYLE PINNED ZOOM SEQUENCE)
+   4. HERO PARALLAX & CARD REVEAL (Lightweight, No Pinning)
    ========================================================================== */
 function initHero3DCameraDive() {
   if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
 
-  gsap.registerPlugin(ScrollTrigger);
-
-  ScrollTrigger.config({
-    ignoreMobileResize: true,
-    autoRefreshEvents: "visibilitychange,DOMContentLoaded,load"
-  });
+  try { gsap.registerPlugin(ScrollTrigger); } catch (e) {}
 
   const heroWrapper = document.getElementById('hero-pinned-wrapper') || document.getElementById('hero');
-  const heroStage = document.getElementById('hero');
   const heroBgLayer = document.getElementById('hero-bg-layer');
-  const heroGlow = document.getElementById('hero-portal-glow');
+  const heroGlow   = document.getElementById('hero-portal-glow');
   const heroVortex = document.getElementById('hero-portal-vortex');
-  const heroContent = document.getElementById('hero-content-3d') || document.getElementById('tf-grand-hero');
+  const heroContent = document.getElementById('hero-content-3d');
   const showcase = document.getElementById('hero-portal-showcase');
   const card1 = document.getElementById('tf-card-1');
   const card2 = document.getElementById('tf-card-2');
   const card3 = document.getElementById('tf-card-3');
-  const scrollPrompt = document.getElementById('tf-scroll-prompt');
-
-  // Cloud Veil Elements
-  const cloudLeft = document.getElementById('cloud-left');
-  const cloudRight = document.getElementById('cloud-right');
-  const cloudBottom = document.getElementById('cloud-bottom');
-  const cloudCenterMist = document.getElementById('cloud-center-mist');
-  const cloudTopDrift = document.getElementById('cloud-top-drift');
 
   if (!heroWrapper || !heroBgLayer) return;
 
-  const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || window.matchMedia('(pointer: coarse)').matches;
-  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  const isMobileScreen = window.innerWidth <= 768;
-  const isTouchOrMobile = isMobileScreen || isTouch || isMobileUA;
+  const isMobile = window.innerWidth <= 768;
 
-  // PINNED MULTI-STAGE CAMERA & CLOUD FLY-THROUGH (DESKTOP & MOBILE)
-  const pinTimeline = gsap.timeline({
-    scrollTrigger: {
-      trigger: heroWrapper,
-      start: 'top top',
-      end: 'bottom bottom',
-      scrub: isTouchOrMobile ? 0.5 : 0.8,
-      pin: heroStage,
-      anticipatePin: 0,
-      fastScrollEnd: true,
-      invalidateOnRefresh: true
-    }
-  });
+  // ── Subtle background parallax on scroll (no pin) ──
+  if (!isMobile) {
+    gsap.to(heroBgLayer, {
+      yPercent: 15,
+      scale: 1.08,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: heroWrapper,
+        start: 'top top',
+        end: 'bottom top',
+        scrub: 0.6,
+        invalidateOnRefresh: true
+      }
+    });
 
-  // Stage 1: Left Corner Hero Content Moves UP & Dissolves into the Sky (0.00 -> 0.35)
-  if (heroContent) {
-    pinTimeline.to(heroContent, {
-      y: isTouchOrMobile ? -60 : -140,
-      scale: isTouchOrMobile ? 1.02 : 1.15,
-      opacity: 0,
-      filter: 'blur(4px)',
-      ease: 'power1.in',
-      pointerEvents: 'none'
-    }, 0.02);
-  }
-
-  if (scrollPrompt) {
-    pinTimeline.to(scrollPrompt, {
-      opacity: 0,
-      y: 20,
-      ease: 'power1.out'
-    }, 0);
-  }
-
-  // Stage 2: White Clouds Veil Parts & Disperses Outwards (Desktop only - mobile keeps pure Minecraft art)
-  if (!isTouchOrMobile) {
-    if (cloudLeft) {
-      pinTimeline.to(cloudLeft, {
-        xPercent: -110,
-        opacity: 0,
-        ease: 'power1.inOut'
-      }, 0.04);
+    if (heroGlow) {
+      gsap.to(heroGlow, {
+        opacity: 0.4,
+        scale: 1.5,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: heroWrapper,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: 0.6
+        }
+      });
     }
 
-    if (cloudRight) {
-      pinTimeline.to(cloudRight, {
-        xPercent: 110,
-        opacity: 0,
-        ease: 'power1.inOut'
-      }, 0.04);
+    if (heroVortex) {
+      gsap.to(heroVortex, {
+        opacity: 0.6,
+        scale: 1.2,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: heroWrapper,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: 0.6
+        }
+      });
     }
 
-    if (cloudBottom) {
-      pinTimeline.to(cloudBottom, {
-        yPercent: 85,
-        opacity: 0,
-        ease: 'power1.inOut'
-      }, 0.05);
-    }
-
-    if (cloudCenterMist) {
-      pinTimeline.to(cloudCenterMist, {
-        scale: 2.2,
-        opacity: 0,
-        ease: 'power1.inOut'
-      }, 0.02);
-    }
-
-    if (cloudTopDrift) {
-      pinTimeline.to(cloudTopDrift, {
-        yPercent: -70,
-        opacity: 0,
-        ease: 'power1.inOut'
-      }, 0.03);
+    if (heroContent) {
+      gsap.to(heroContent, {
+        y: -60,
+        opacity: 0.6,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: heroWrapper,
+          start: 'top top',
+          end: '60% top',
+          scrub: 0.5,
+          invalidateOnRefresh: true
+        }
+      });
     }
   }
 
-  // Stage 3: Background Portal Zooms in Smoothly (0.00 -> 0.70)
-  pinTimeline
-    .to(heroBgLayer, {
-      scale: isTouchOrMobile ? 1.3 : 1.65,
-      y: isTouchOrMobile ? 10 : 20,
-      filter: 'brightness(1.15) contrast(1.08)',
-      ease: 'none'
-    }, 0)
-    .to(heroGlow, {
-      scale: 2.2,
-      opacity: 1,
-      ease: 'none'
-    }, 0);
-
-  if (heroVortex) {
-    pinTimeline.to(heroVortex, {
-      opacity: 0.9,
-      scale: 1.4,
-      ease: 'none'
-    }, 0.1);
-  }
-
-  // Stage 4: Three.js Camera Drives Forward into Portal
-  if (typeof threeCamera !== 'undefined') {
-    pinTimeline.to(threeCamera.position, {
-      z: 14,
-      ease: 'none'
-    }, 0);
-  }
-
-  // Stage 5: Techfest-Style 3D Floating Showcase Cards Fly In (0.24 -> 0.65)
-  if (showcase) {
-    pinTimeline
-      .set(showcase, { visibility: 'visible' }, 0.20)
-      .to(showcase, {
+  // ── Animate showcase cards in on scroll reveal ──
+  if (showcase && card1 && card2 && card3) {
+    gsap.fromTo([card1, card2, card3],
+      { opacity: 0, y: 50 },
+      {
         opacity: 1,
+        y: 0,
+        stagger: 0.12,
+        duration: 0.7,
         ease: 'power2.out',
-        duration: 0.15
-      }, 0.22);
-  }
-
-  if (card1 && card2 && card3) {
-    pinTimeline
-      .fromTo(card1,
-        { opacity: 0, y: isTouchOrMobile ? 40 : 120, scale: 0.85, rotationY: isTouchOrMobile ? 0 : 14, z: isTouchOrMobile ? 0 : -250 },
-        { opacity: 1, y: 0, scale: 1, rotationY: 0, z: 0, ease: 'power2.out' },
-        0.24
-      )
-      .fromTo(card2,
-        { opacity: 0, y: isTouchOrMobile ? 50 : 160, scale: 0.80, z: isTouchOrMobile ? 0 : -350 },
-        { opacity: 1, y: 0, scale: 1, z: 0, ease: 'back.out(1.1)' },
-        0.28
-      )
-      .fromTo(card3,
-        { opacity: 0, y: isTouchOrMobile ? 40 : 120, scale: 0.85, rotationY: isTouchOrMobile ? 0 : -14, z: isTouchOrMobile ? 0 : -250 },
-        { opacity: 1, y: 0, scale: 1, rotationY: 0, z: 0, ease: 'power2.out' },
-        0.26
-      );
-  }
-
-  // Stage 6: Smooth Outflow Transition to About Section (0.85 -> 1.0)
-  if (showcase) {
-    pinTimeline.to(showcase, {
-      y: -50,
-      opacity: 0,
-      scale: 0.95,
-      ease: 'power1.in'
-    }, 0.88);
+        scrollTrigger: {
+          trigger: showcase,
+          start: 'top 85%',
+          toggleActions: 'play none none reverse',
+          invalidateOnRefresh: true
+        }
+      }
+    );
   }
 }
 
@@ -1780,7 +1718,29 @@ function initRegistrationModal() {
     }
   });
 
-  // Handle Form Submission with SQLite Database Persistence
+  // ── TEAM SIZE → DYNAMIC MEMBER FIELDS ──
+  const teamSizeSelect = document.getElementById('team-size');
+  const teamMembersSection = document.getElementById('team-members-section');
+
+  function updateMemberFields(size) {
+    const n = parseInt(size, 10) || 1;
+    if (teamMembersSection) teamMembersSection.style.display = n > 1 ? 'block' : 'none';
+    [2, 3, 4].forEach(i => {
+      const row = document.getElementById(`member-${i}-row`);
+      const nameInput = document.getElementById(`member-${i}-name`);
+      const emailInput = document.getElementById(`member-${i}-email`);
+      if (row) row.style.display = i <= n ? 'block' : 'none';
+      if (nameInput) nameInput.required = (i <= n);
+      if (emailInput) emailInput.required = (i <= n);
+    });
+  }
+
+  if (teamSizeSelect) {
+    teamSizeSelect.addEventListener('change', () => updateMemberFields(teamSizeSelect.value));
+    // Initialize on load with default value (4)
+    updateMemberFields(teamSizeSelect.value);
+  }
+
   if (regForm) {
     const errorBox = document.getElementById('reg-error-box');
     const submitBtn = document.getElementById('submit-ticket-btn');
@@ -1803,6 +1763,15 @@ function initRegistrationModal() {
       const portfolioUrl = (document.getElementById('portfolio-url')?.value || '').trim();
       const conceptBrief = (document.getElementById('concept-brief')?.value || '').trim();
 
+      // Collect additional team member data
+      const members = [];
+      const n = parseInt(teamSize, 10) || 1;
+      for (let i = 2; i <= n; i++) {
+        const mName = (document.getElementById(`member-${i}-name`)?.value || '').trim();
+        const mEmail = (document.getElementById(`member-${i}-email`)?.value || '').trim();
+        if (mName) members.push({ name: mName, email: mEmail, role: `MEMBER_${i}` });
+      }
+
       // Loading state on button
       if (submitBtn) {
         submitBtn.disabled = true;
@@ -1822,7 +1791,8 @@ function initRegistrationModal() {
             college_name: collegeName,
             primary_track: track,
             portfolio_url: portfolioUrl,
-            concept_brief: conceptBrief
+            concept_brief: conceptBrief,
+            members: members
           })
         });
 
@@ -1992,8 +1962,29 @@ function initRegistrationModal() {
         const orderData = await orderRes.json();
         if (hackRzpLoading) hackRzpLoading.style.display = 'none';
 
-        if (!orderData.success || !orderData.orderId) {
+        if (!orderData.success) {
           throw new Error(orderData.error || 'Failed to create payment order. Please try again.');
+        }
+
+        // If Razorpay is unavailable (e.g. localhost restriction), show UPI fallback
+        if (orderData.upiOnly) {
+          hackRzpBtn.disabled = false;
+          if (btnLabel) btnLabel.textContent = '📱 USE UPI QR BELOW';
+          if (hackRzpErrorBox) {
+            hackRzpErrorBox.style.background = 'rgba(234,179,8,0.12)';
+            hackRzpErrorBox.style.border = '1px solid rgba(234,179,8,0.4)';
+            hackRzpErrorBox.style.color = '#fde047';
+            hackRzpErrorBox.textContent = `⚠️ Razorpay is not available on localhost. Please pay via UPI QR code below and submit your Transaction ID. Reference: ${orderData.referenceId}`;
+            hackRzpErrorBox.style.display = 'block';
+          }
+          // Scroll to UPI section
+          const upiSection = document.getElementById('hack-qr-img');
+          if (upiSection) upiSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          return;
+        }
+
+        if (!orderData.orderId) {
+          throw new Error('No order ID received. Please try again.');
         }
 
         if (typeof Razorpay === 'undefined') {

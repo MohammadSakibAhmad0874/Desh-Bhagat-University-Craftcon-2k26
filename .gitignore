@@ -10,7 +10,7 @@ scratch/
 main_hackathon/
 
 # API Keys & Secrets — NEVER commit these
-rzp-key.csv
+rzp-key*.csv
 *.key.csv
 secrets/
 *.pem

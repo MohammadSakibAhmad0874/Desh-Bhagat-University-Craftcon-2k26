@@ -714,8 +714,26 @@
           const orderData = await orderRes.json();
           if (loadingMsg) loadingMsg.style.display = 'none';
 
-          if (!orderData.success || !orderData.orderId) {
+          if (!orderData.success) {
             throw new Error(orderData.error || 'Failed to create payment order from server.');
+          }
+
+          // Razorpay live keys restricted on localhost — show UPI fallback
+          if (orderData.upiOnly) {
+            newBtn.disabled = false;
+            if (btnLabel) btnLabel.textContent = '📱 USE UPI QR BELOW';
+            if (errorMsgEl) {
+              errorMsgEl.style.background = 'rgba(234,179,8,0.12)';
+              errorMsgEl.style.borderColor = 'rgba(234,179,8,0.4)';
+              errorMsgEl.style.color = '#fde047';
+              errorMsgEl.textContent = `⚠️ Razorpay unavailable on localhost. Please pay ₹${orderData.displayAmount} via UPI QR below and enter your Transaction ID. Ref: ${orderData.referenceId}`;
+              errorMsgEl.style.display = 'block';
+            }
+            return;
+          }
+
+          if (!orderData.orderId) {
+            throw new Error('No order ID received from server. Please try again.');
           }
 
           const gameConfig = GAMES_CATALOGUE[wizardState.gameId] || {};
