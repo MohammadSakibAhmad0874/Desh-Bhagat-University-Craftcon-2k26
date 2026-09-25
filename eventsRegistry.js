@@ -89,13 +89,13 @@ const EVENTS_REGISTRY = {
     registrationType: 'SOLO',
     minParticipants: 1,
     maxParticipants: 1,
-    feePerParticipant: 50,
-    fixedFee: 50,
+    feePerParticipant: 1,
+    fixedFee: 1,
     paymentRequired: true,
     active: true,
     description: 'Physical board-to-table dice strategy combat with zero ping latency. Solo entry.',
     image: 'assets/images/games/ludo_banner.jpg',
-    badge: 'SOLO REGISTRATION (1 PLAYER)'
+    badge: 'SOLO REGISTRATION (1 PLAYER) · ₹1/PLAYER'
   },
 
   'CHESS': {

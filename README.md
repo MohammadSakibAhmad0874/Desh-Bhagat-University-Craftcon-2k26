@@ -1,9 +1,10 @@
-﻿# CRAFTCON 2K26 - Desh Bhagat University
+# CRAFTCON 2K26 - Desh Bhagat University
 
 > **The Official Event Registration & Gaming Tournament Portal**
 > Faculty of Engineering, Technology and Computing | Desh Bhagat University
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-craftcon2k26--dbu--arena.netlify.app-brightgreen?style=for-the-badge&logo=netlify)](https://craftcon2k26-dbu-arena.netlify.app)
+[![Netlify](https://img.shields.io/badge/Netlify-craftcon2k26--dbu--arena.netlify.app-brightgreen?style=for-the-badge&logo=netlify)](https://craftcon2k26-dbu-arena.netlify.app)
+[![Vercel](https://img.shields.io/badge/Vercel-craftcon2k26--mu.vercel.app-black?style=for-the-badge&logo=vercel)](https://craftcon2k26-mu.vercel.app)
 [![GitHub](https://img.shields.io/badge/GitHub-MohammadSakibAhmad0874-black?style=for-the-badge&logo=github)](https://github.com/MohammadSakibAhmad0874/Desh-Bhagat-University-Craftcon-2k26)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18-green?style=for-the-badge&logo=node.js)](https://nodejs.org)
 [![Razorpay](https://img.shields.io/badge/payment-Razorpay-0050FF?style=for-the-badge&logo=razorpay)](https://razorpay.com)
@@ -11,9 +12,10 @@
 
 ---
 
-## Live Site
+## Live Deployments
 
-**[https://craftcon2k26-dbu-arena.netlify.app](https://craftcon2k26-dbu-arena.netlify.app)**
+- **Vercel:** [https://craftcon2k26-mu.vercel.app](https://craftcon2k26-mu.vercel.app)
+- **Netlify:** [https://craftcon2k26-dbu-arena.netlify.app](https://craftcon2k26-dbu-arena.netlify.app)
 
 ---
 

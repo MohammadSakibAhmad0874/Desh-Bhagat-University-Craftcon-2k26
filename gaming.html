@@ -21,14 +21,14 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Silkscreen:wght@400;700&family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- External Animation Libraries -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
-  <script src="https://unpkg.com/lenis@1.1.9/dist/lenis.min.js" defer></script>
+  <!-- External Animation Libraries — loaded synchronously so Three.js/GSAP/Lenis are ready before gaming.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/lenis@1.1.9/dist/lenis.min.js"></script>
 
-  <!-- Razorpay Checkout Integration (Optional Gateway Connector) -->
-  <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+  <!-- Razorpay Checkout Integration -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="gaming.css">
@@ -283,7 +283,7 @@
             </div>
             <div class="meta-item">
               <span class="meta-label">TOTAL FEE</span>
-              <span class="meta-val">₹50</span>
+              <span class="meta-val">₹1</span>
             </div>
           </div>
           <div class="game-card-actions">
@@ -374,7 +374,7 @@
 
         <div class="battle-plan-card reveal-on-scroll delay-4" style="padding: 24px; background: rgba(18, 18, 30, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1.5px solid rgba(255, 255, 255, 0.14); border-radius: 10px;">
           <h4 style="color:var(--color-amber); font-family:'Space Grotesk', sans-serif; font-size:1.2rem; margin-bottom:12px;">💳 REGISTRATION FEE</h4>
-          <p style="color:var(--text-muted); line-height:1.6;"><strong>₹50 PER PERSON</strong><br>Auto-calculated based on squad or solo count.</p>
+          <p style="color:var(--text-muted); line-height:1.6;"><strong>FROM ₹1 PER PERSON (Ludo)</strong><br>Auto-calculated based on game type, squad or solo count.</p>
         </div>
       </div>
     </div>
@@ -390,7 +390,7 @@
     <div style="display: flex; flex-direction: column; gap: 16px;">
       <details open class="faq-accordion-card reveal-on-scroll delay-1" style="padding: 18px 24px; background: rgba(18, 18, 30, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1.5px solid rgba(255, 255, 255, 0.14); border-radius: 8px; cursor: pointer;">
         <summary style="font-family:'Space Grotesk', sans-serif; font-weight:700; color:var(--text-white); font-size:1.1rem;">What is the registration fee?</summary>
-        <p style="color:var(--text-muted); margin-top:12px; line-height:1.6;">The registration fee is strictly <strong>₹50 per person</strong>. For a 4-player squad (BGMI / Free Fire), total is ₹200. For 5-player Mobile Legends, total is ₹250. For Solo games (Ludo, Chess, Carrom), total is ₹50.</p>
+        <p style="color:var(--text-muted); margin-top:12px; line-height:1.6;">Registration fees vary by game. For a 4-player squad (BGMI / Free Fire), total is ₹200. For 5-player Mobile Legends, total is ₹250. For Solo games: Chess ₹50, Carrom ₹50, Ludo ₹1 (special promo!).</p>
       </details>
 
       <details open class="faq-accordion-card reveal-on-scroll delay-2" style="padding: 18px 24px; background: rgba(18, 18, 30, 0.75); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1.5px solid rgba(255, 255, 255, 0.14); border-radius: 8px; cursor: pointer;">
@@ -841,6 +841,6 @@
     </div>
   </div>
 
-  <script src="gaming.js" defer></script>
+  <script src="gaming.js"></script>
 </body>
 </html>

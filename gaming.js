@@ -3,7 +3,8 @@
  * Centralized Registration Wizard State Machine, Payment Integration & Interactive Mechanics
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+// Use window 'load' to guarantee Three.js / GSAP / Lenis CDN scripts are ready before animations init.
+window.addEventListener('load', () => {
   // Page Load Animation Sequence Trigger
   setTimeout(() => {
     document.body.classList.add('page-load-ready');
@@ -37,6 +38,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 400);
   }
 });
+// Fallback if already loaded
+if (document.readyState === 'complete') {
+  document.body.classList.add('page-load-ready');
+}
 
 
 /* ==========================================================================
@@ -79,7 +84,7 @@ const GAMES_CATALOGUE = {
     category: 'offline',
     type: 'solo',
     minPlayers: 1,
-    feePerPerson: 50,
+    feePerPerson: 1,
     description: 'Physical board-to-table dice strategy combat with zero ping latency. Solo entry.',
     image: 'assets/images/games/ludo_banner.jpg'
   },

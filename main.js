@@ -45,10 +45,18 @@ function bootApp() {
   initPolicyModals();
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', bootApp);
-} else {
+// Use window 'load' event to guarantee Three.js / GSAP / Lenis CDN scripts are fully loaded.
+// DOMContentLoaded fires before external scripts complete — causing 3D/scroll failures on production.
+let _booted = false;
+function safeBootApp() {
+  if (_booted) return;
+  _booted = true;
   bootApp();
+}
+window.addEventListener('load', safeBootApp);
+// Fallback: if page already loaded (script injected late), run immediately
+if (document.readyState === 'complete') {
+  safeBootApp();
 }
 
 /* ==========================================================================
