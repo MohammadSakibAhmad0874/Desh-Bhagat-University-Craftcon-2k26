@@ -129,8 +129,8 @@ const GAMES_REGISTRY = {
   }
 };
 
-const DEFAULT_RAZORPAY_KEY_ID = 'rzp_live_Tf5hyNfnivNCbM';
-const DEFAULT_RAZORPAY_KEY_SECRET = 'lCUxbsyfXw4sbM74LvbBCiIv';
+const DEFAULT_RAZORPAY_KEY_ID = 'rzp_live_TaAQbnqerUrDQx';
+const DEFAULT_RAZORPAY_KEY_SECRET = 'k1I3KDVdfMlOjj08P3GMmHzF';
 
 /**
  * Safe Razorpay Diagnostics Helper
